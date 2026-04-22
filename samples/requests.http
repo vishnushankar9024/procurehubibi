@@ -1,0 +1,85 @@
+### Health
+GET http://localhost:3000/health
+
+### 1) Create Prequalification Template
+POST http://localhost:3000/template/create
+Content-Type: application/json
+
+{
+  "projectId": "project-1001",
+  "projectType": "high-rise residential",
+  "requirements": {
+    "region": "Middle East",
+    "contractType": "design-build"
+  }
+}
+
+### 2) Create Scoring Matrix (replace templateId)
+POST http://localhost:3000/scoring/create
+Content-Type: application/json
+
+{
+  "projectId": "project-1001",
+  "templateId": "replace-template-id",
+  "globalThresholdPercent": 60,
+  "criteria": [
+    {
+      "key": "experience_years",
+      "label": "Relevant Experience",
+      "category": "qualitative",
+      "weight": 40,
+      "method": "scaled",
+      "maxScore": 5,
+      "threshold": 3,
+      "mandatory": true
+    },
+    {
+      "key": "annual_turnover",
+      "label": "Annual Turnover",
+      "category": "quantitative",
+      "weight": 60,
+      "method": "scaled",
+      "maxScore": 5,
+      "threshold": 2,
+      "mandatory": true
+    }
+  ]
+}
+
+### 3) Upload and Parse BOQ (multipart, file required)
+# Example curl:
+# curl -X POST http://localhost:3000/boq/upload \
+#   -F "projectId=project-1001" \
+#   -F "file=@samples/vendor_documents/vendor_a_profile.txt"
+
+### 4) Analyze Vendor Submission (multipart, documents required)
+# Example curl:
+# curl -X POST http://localhost:3000/vendor/analyze \
+#   -F "projectId=project-1001" \
+#   -F "vendorId=vendor-a" \
+#   -F "templateId=replace-template-id" \
+#   -F "structuredInput={\"vendorTier\":\"A\"}" \
+#   -F "documents=@samples/vendor_documents/vendor_a_profile.txt"
+
+### 5) Score Vendor (replace scoringMatrixId + vendorEvaluationId)
+POST http://localhost:3000/vendor/score
+Content-Type: application/json
+
+{
+  "projectId": "project-1001",
+  "vendorId": "vendor-a",
+  "scoringMatrixId": "replace-scoring-matrix-id",
+  "vendorEvaluationId": "replace-vendor-evaluation-id"
+}
+
+### 6) Compare Vendors (replace score ids)
+POST http://localhost:3000/vendor/compare
+Content-Type: application/json
+
+{
+  "projectId": "project-1001",
+  "vendorScoreIds": ["replace-score-id-a", "replace-score-id-b"]
+}
+
+### 7) Generate report
+GET http://localhost:3000/report/project-1001
