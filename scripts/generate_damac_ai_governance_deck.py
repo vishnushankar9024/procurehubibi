@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Generate DAMAC PMWeb AI Governance & Intelligence Layer executive deck.
-Premium consulting style — black & red CMCS brand theme.
+DAMAC PMWeb — Enterprise AI Governance & Intelligence Layer
+Premium consulting deck: white base, black & red accents, CMCS + DAMAC logos.
 """
 
 from __future__ import annotations
@@ -10,26 +10,37 @@ from pathlib import Path
 
 from pptx import Presentation
 from pptx.dml.color import RGBColor
-from pptx.enum.shapes import MSO_AUTO_SHAPE_TYPE, MSO_CONNECTOR_TYPE
-from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
+from pptx.enum.shapes import MSO_AUTO_SHAPE_TYPE
+from pptx.enum.text import PP_ALIGN
 from pptx.util import Inches, Pt
 
-# ── Brand palette (CMCS: black + red) ──────────────────────────────────────
-BLACK = RGBColor(0x0A, 0x0A, 0x0A)
-CHARCOAL = RGBColor(0x1A, 0x1A, 0x1A)
-CARD = RGBColor(0x22, 0x22, 0x22)
-CARD_LIGHT = RGBColor(0x2E, 0x2E, 0x2E)
+# ── Palette: white slides, black text, red accents only ───────────────────
+WHITE = RGBColor(0xFF, 0xFF, 0xFF)
+OFF_WHITE = RGBColor(0xFA, 0xFA, 0xFA)
+BLACK = RGBColor(0x1A, 0x1A, 0x1A)
+TEXT = RGBColor(0x2D, 0x2D, 0x2D)
+MUTED = RGBColor(0x6B, 0x6B, 0x6B)
+LIGHT_GRAY = RGBColor(0xF0, 0xF0, 0xF0)
+BORDER = RGBColor(0xDD, 0xDD, 0xDD)
 RED = RGBColor(0xE3, 0x18, 0x37)
 RED_DARK = RGBColor(0xB0, 0x12, 0x28)
-RED_SOFT = RGBColor(0xFF, 0x4D, 0x6A)
-WHITE = RGBColor(0xFF, 0xFF, 0xFF)
-SILVER = RGBColor(0xC8, 0xC8, 0xC8)
-MUTED = RGBColor(0x9A, 0x9A, 0x9A)
-GOLD = RGBColor(0xD4, 0xAF, 0x37)
+RED_TINT = RGBColor(0xFD, 0xF2, 0xF4)
 
 SLIDE_W = Inches(13.333)
 SLIDE_H = Inches(7.5)
-MARGIN = Inches(0.55)
+MARGIN = Inches(0.6)
+CONTENT_LEFT = MARGIN
+CONTENT_WIDTH = Inches(12.1)
+HEADER_BOTTOM = Inches(1.22)
+CONTENT_TOP = Inches(1.38)
+CONTENT_BOTTOM = Inches(6.55)
+FOOTER_TOP = Inches(6.72)
+
+ASSETS = Path(__file__).resolve().parents[1] / "assets"
+CMCS_LOGO = ASSETS / "cmcs_logo.png"
+DAMAC_LOGO = ASSETS / "damac_logo.png"
+
+RECOMMENDED_AI = "Claude Enterprise"
 
 
 def prs_blank() -> Presentation:
@@ -43,41 +54,26 @@ def add_blank_slide(prs: Presentation):
     return prs.slides.add_slide(prs.slide_layouts[6])
 
 
-def fill_bg(slide, color: RGBColor = BLACK):
-    bg = slide.background
-    fill = bg.fill
-    fill.solid()
-    fill.fore_color.rgb = color
+def fill_bg(slide, color: RGBColor = WHITE):
+    slide.background.fill.solid()
+    slide.background.fill.fore_color.rgb = color
 
 
 def rect(slide, left, top, width, height, fill: RGBColor, line: RGBColor | None = None, radius=False):
-    shape_type = MSO_AUTO_SHAPE_TYPE.ROUNDED_RECTANGLE if radius else MSO_AUTO_SHAPE_TYPE.RECTANGLE
-    s = slide.shapes.add_shape(shape_type, left, top, width, height)
+    st = MSO_AUTO_SHAPE_TYPE.ROUNDED_RECTANGLE if radius else MSO_AUTO_SHAPE_TYPE.RECTANGLE
+    s = slide.shapes.add_shape(st, left, top, width, height)
     s.fill.solid()
     s.fill.fore_color.rgb = fill
     if line:
         s.line.color.rgb = line
-        s.line.width = Pt(1)
+        s.line.width = Pt(0.75)
     else:
         s.line.fill.background()
     return s
 
 
-def accent_bar(slide, top=Inches(0), height=Inches(0.06)):
-    rect(slide, Inches(0), top, SLIDE_W, height, RED)
-
-
-def red_swoosh(slide, left, top, width, height):
-    """Decorative CMCS-style arc accent."""
-    s = slide.shapes.add_shape(MSO_AUTO_SHAPE_TYPE.OVAL, left, top, width, height)
-    s.fill.background()
-    s.line.color.rgb = RED
-    s.line.width = Pt(2.5)
-    return s
-
-
 def textbox(slide, left, top, width, height, text: str, size=14, bold=False,
-            color=WHITE, align=PP_ALIGN.LEFT, font="Calibri"):
+            color=TEXT, align=PP_ALIGN.LEFT, font="Calibri"):
     tb = slide.shapes.add_textbox(left, top, width, height)
     tf = tb.text_frame
     tf.word_wrap = True
@@ -91,729 +87,732 @@ def textbox(slide, left, top, width, height, text: str, size=14, bold=False,
     return tb
 
 
-def bullets(slide, left, top, width, height, items: list[str], size=13, color=SILVER, spacing=1.15):
+def bullets(slide, left, top, width, height, items: list[str], size=12, color=TEXT):
     tb = slide.shapes.add_textbox(left, top, width, height)
     tf = tb.text_frame
     tf.word_wrap = True
     for i, item in enumerate(items):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-        p.text = item
-        p.level = 0
+        p.text = f"• {item}" if not item.startswith("•") else item
         p.font.size = Pt(size)
         p.font.name = "Calibri"
         p.font.color.rgb = color
-        p.space_after = Pt(6)
-        p.line_spacing = spacing
+        p.space_after = Pt(5)
     return tb
 
 
-def section_header(slide, section_num: str, title: str, subtitle: str = ""):
-    fill_bg(slide)
-    accent_bar(slide)
-    red_swoosh(slide, Inches(11.2), Inches(0.3), Inches(1.8), Inches(1.2))
-    textbox(slide, MARGIN, Inches(0.35), Inches(3), Inches(0.4), section_num, 11, True, RED)
-    textbox(slide, MARGIN, Inches(1.1), Inches(11), Inches(0.9), title, 36, True, WHITE)
+def add_logo(slide, path: Path, left, top, height=Inches(0.42)):
+    if path.exists():
+        slide.shapes.add_picture(str(path), left, top, height=height)
+
+
+def slide_chrome(slide, section: str = "", title: str = "", subtitle: str = "",
+                   dark_divider: bool = False):
+    """Consistent header, logos, footer on every slide."""
+    fill_bg(slide, OFF_WHITE if dark_divider else WHITE)
+    rect(slide, Inches(0), Inches(0), SLIDE_W, Inches(0.045), RED)
+    rect(slide, Inches(0), FOOTER_TOP, SLIDE_W, Inches(0.78), LIGHT_GRAY)
+    rect(slide, Inches(0), FOOTER_TOP, SLIDE_W, Inches(0.02), RED)
+
+    add_logo(slide, DAMAC_LOGO, MARGIN, Inches(0.12), Inches(0.38))
+    add_logo(slide, CMCS_LOGO, Inches(10.85), Inches(0.08), Inches(0.44))
+
+    if section:
+        textbox(slide, CONTENT_LEFT, Inches(0.52), Inches(2.5), Inches(0.28), section.upper(),
+                10, True, RED)
+    if title:
+        textbox(slide, CONTENT_LEFT, Inches(0.78), CONTENT_WIDTH, Inches(0.55), title,
+                26, True, BLACK)
     if subtitle:
-        textbox(slide, MARGIN, Inches(2.0), Inches(10), Inches(0.6), subtitle, 16, False, MUTED)
+        textbox(slide, CONTENT_LEFT, Inches(1.02), CONTENT_WIDTH, Inches(0.35), subtitle,
+                12, False, MUTED)
+
+    textbox(slide, MARGIN, Inches(6.82), Inches(7.5), Inches(0.28),
+            "DAMAC | Enterprise AI Governance & Intelligence Layer for PMWeb",
+            8, False, MUTED)
+    textbox(slide, Inches(10.8), Inches(6.82), Inches(2.0), Inches(0.28),
+            "CONFIDENTIAL", 8, True, RED, PP_ALIGN.RIGHT)
 
 
-def footer(slide, label: str = "DAMAC | Enterprise AI Governance & Intelligence Layer for PMWeb"):
-    rect(slide, Inches(0), Inches(7.05), SLIDE_W, Inches(0.45), CHARCOAL)
-    textbox(slide, MARGIN, Inches(7.12), Inches(8), Inches(0.3), label, 9, False, MUTED)
-    textbox(slide, Inches(10.5), Inches(7.12), Inches(2.5), Inches(0.3), "CONFIDENTIAL", 9, True, RED, PP_ALIGN.RIGHT)
+def card(slide, left, top, w, h, title: str, body: list[str], accent=True):
+    rect(slide, left, top, w, h, WHITE, BORDER, radius=True)
+    if accent:
+        rect(slide, left, top, Inches(0.06), h, RED)
+    textbox(slide, left + Inches(0.18), top + Inches(0.12), w - Inches(0.3), Inches(0.38),
+            title, 12, True, BLACK)
+    bullets(slide, left + Inches(0.18), top + Inches(0.5), w - Inches(0.3), h - Inches(0.55),
+            body, 10, MUTED)
 
 
-def card(slide, left, top, w, h, title: str, body: list[str], icon: str = ""):
-    rect(slide, left, top, w, h, CARD, RED, radius=True)
-    rect(slide, left, top, Inches(0.08), h, RED)
-    y = top + Inches(0.2)
-    if icon:
-        textbox(slide, left + Inches(0.25), y, Inches(0.5), Inches(0.4), icon, 20, False, RED)
-        y += Inches(0.35)
-    textbox(slide, left + Inches(0.25), y, w - Inches(0.4), Inches(0.45), title, 14, True, WHITE)
-    bullets(slide, left + Inches(0.25), y + Inches(0.5), w - Inches(0.4), h - Inches(0.7), body, 11, SILVER)
-
-
-def add_table(slide, left, top, width, height, headers: list[str], rows: list[list[str]],
-              header_fill=RED, row_fill=CARD, alt_fill=CARD_LIGHT, font_size=9):
-    n_rows = len(rows) + 1
-    n_cols = len(headers)
-    tbl = slide.shapes.add_table(n_rows, n_cols, left, top, width, height).table
-
-    col_w = int(width / n_cols)
-    for c in range(n_cols):
-        tbl.columns[c].width = col_w
-
+def add_table(slide, left, top, width, height, headers, rows, font_size=9):
+    tbl = slide.shapes.add_table(len(rows) + 1, len(headers), left, top, width, height).table
+    cw = int(width / len(headers))
+    for c in range(len(headers)):
+        tbl.columns[c].width = cw
     for c, h in enumerate(headers):
         cell = tbl.cell(0, c)
         cell.text = h
         cell.fill.solid()
-        cell.fill.fore_color.rgb = header_fill
+        cell.fill.fore_color.rgb = BLACK
         for p in cell.text_frame.paragraphs:
             p.font.size = Pt(font_size)
             p.font.bold = True
             p.font.color.rgb = WHITE
             p.font.name = "Calibri"
             p.alignment = PP_ALIGN.CENTER
-
     for r, row in enumerate(rows):
-        fill = row_fill if r % 2 == 0 else alt_fill
+        fill = WHITE if r % 2 == 0 else OFF_WHITE
         for c, val in enumerate(row):
             cell = tbl.cell(r + 1, c)
             cell.text = val
             cell.fill.solid()
             cell.fill.fore_color.rgb = fill
+            bold = c == 0 and "Claude" in str(val)
             for p in cell.text_frame.paragraphs:
                 p.font.size = Pt(font_size - 1)
-                p.font.color.rgb = SILVER
+                p.font.color.rgb = RED if bold and r == 0 else TEXT
+                p.font.bold = bold
                 p.font.name = "Calibri"
     return tbl
 
 
-def arrow_down(slide, cx, y1, y2):
-    slide.shapes.add_connector(
-        MSO_CONNECTOR_TYPE.STRAIGHT, cx, y1, cx, y2
-    ).line.color.rgb = RED
-
-
-def arch_box(slide, left, top, w, h, label: str, sub: str = ""):
-    rect(slide, left, top, w, h, CARD, RED, radius=True)
-    textbox(slide, left + Inches(0.1), top + Inches(0.15), w - Inches(0.2), Inches(0.35),
-             label, 12, True, WHITE, PP_ALIGN.CENTER)
+def arch_box(slide, left, top, w, h, label: str, sub: str = "", highlight=False):
+    fill = RED_TINT if highlight else WHITE
+    line = RED if highlight else BORDER
+    rect(slide, left, top, w, h, fill, line, radius=True)
+    textbox(slide, left + Inches(0.08), top + Inches(0.1), w - Inches(0.16), Inches(0.32),
+            label, 11, True, BLACK if not highlight else RED_DARK, PP_ALIGN.CENTER)
     if sub:
-        textbox(slide, left + Inches(0.05), top + Inches(0.5), w - Inches(0.1), h - Inches(0.55),
-                sub, 9, False, MUTED, PP_ALIGN.CENTER)
+        textbox(slide, left + Inches(0.05), top + Inches(0.42), w - Inches(0.1), h - Inches(0.45),
+                sub, 8, False, MUTED, PP_ALIGN.CENTER)
+
+
+def callout(slide, left, top, width, text: str, size=11):
+    rect(slide, left, top, width, Inches(0.48), RED_TINT, RED, radius=True)
+    textbox(slide, left + Inches(0.15), top + Inches(0.1), width - Inches(0.3), Inches(0.32),
+            text, size, True, RED_DARK, PP_ALIGN.CENTER)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# SLIDE BUILDERS
+# SLIDES
 # ═══════════════════════════════════════════════════════════════════════════
 
 def slide_title(prs):
     s = add_blank_slide(prs)
-    fill_bg(s)
-    accent_bar(s, Inches(0), Inches(0.08))
-    red_swoosh(s, Inches(-0.3), Inches(1.5), Inches(4), Inches(3.5))
-    red_swoosh(s, Inches(9.5), Inches(4.5), Inches(4), Inches(2.5))
-    rect(s, MARGIN, Inches(2.2), Inches(0.12), Inches(2.8), RED)
-    textbox(s, Inches(0.85), Inches(2.0), Inches(11), Inches(1.2),
-            "Enterprise AI Governance &\nIntelligence Layer for PMWeb", 40, True, WHITE)
-    textbox(s, Inches(0.85), Inches(4.0), Inches(10), Inches(0.6),
-            "Governed AI Orchestration — Not Direct AI-to-Database Connectivity", 18, False, RED_SOFT)
-    textbox(s, Inches(0.85), Inches(4.8), Inches(10), Inches(0.5),
-            "Executive Proposal for DAMAC Leadership & Technology Stakeholders", 14, False, MUTED)
-    textbox(s, Inches(0.85), Inches(6.2), Inches(4), Inches(0.4), "Prepared for: DAMAC", 12, False, SILVER)
-    textbox(s, Inches(5.5), Inches(6.2), Inches(4), Inches(0.4), "CMCS | May 2026", 12, False, SILVER, PP_ALIGN.RIGHT)
-    footer(s, "CMCS | DAMAC AI Transformation Proposal")
+    fill_bg(s, WHITE)
+    rect(s, Inches(0), Inches(0), SLIDE_W, Inches(0.06), RED)
+    add_logo(s, DAMAC_LOGO, Inches(0.55), Inches(0.35), Inches(0.55))
+    add_logo(s, CMCS_LOGO, Inches(10.6), Inches(0.32), Inches(0.58))
+    rect(s, MARGIN, Inches(1.85), Inches(0.1), Inches(2.4), RED)
+    textbox(s, Inches(0.85), Inches(1.7), Inches(11.5), Inches(1.4),
+            "Enterprise AI Governance &\nIntelligence Layer for PMWeb", 34, True, BLACK)
+    textbox(s, Inches(0.85), Inches(3.35), Inches(10.5), Inches(0.45),
+            "Governed AI Orchestration — Not Direct AI-to-Database Connectivity", 15, False, RED)
+    textbox(s, Inches(0.85), Inches(3.95), Inches(10), Inches(0.4),
+            "Executive Proposal for DAMAC Leadership & Technology Stakeholders", 13, False, MUTED)
+    textbox(s, Inches(0.85), Inches(5.6), Inches(5), Inches(0.35), "Prepared for DAMAC  |  May 2026", 11, False, MUTED)
+    rect(s, Inches(0), FOOTER_TOP, SLIDE_W, Inches(0.78), LIGHT_GRAY)
+    textbox(s, MARGIN, Inches(6.82), Inches(10), Inches(0.3), "CMCS × DAMAC AI Transformation Proposal", 9, False, MUTED)
 
 
 def slide_agenda(prs):
     s = add_blank_slide(prs)
-    section_header(s, "OVERVIEW", "Agenda", "Boardroom executive briefing structure")
+    slide_chrome(s, "Overview", "Agenda", "Boardroom executive briefing structure")
     items = [
-        ("01", "Executive Summary & Current vs Future State"),
-        ("02", "DAMAC PMWeb Use Cases"),
-        ("03", "Why Direct AI-to-PMWeb Is Risky"),
-        ("04", "Recommended Enterprise Architecture"),
-        ("05", "AI Model Comparison & Recommendation"),
-        ("06", "Enterprise Pricing & Cost Optimization"),
-        ("07", "Phased Implementation Strategy"),
-        ("08", "Security, Governance & Controls"),
-        ("09", "Future Vision — DAMAC AI Governance Platform"),
-        ("10", "Final Recommendation"),
+        "01  Executive Summary & Current vs Future State",
+        "02  DAMAC PMWeb Use Cases",
+        "03  Why Direct AI-to-PMWeb Is Risky",
+        "04  Recommended Enterprise Architecture",
+        "05  AI Model Comparison & Recommendation",
+        "06  Enterprise Pricing & Cost Optimization",
+        "07  Phased Implementation Strategy",
+        "08  Security, Governance & Controls",
+        "09  Future Vision — DAMAC AI Governance Platform",
+        "10  Final Recommendation",
     ]
-    y = Inches(2.5)
-    for num, title in items:
-        rect(s, MARGIN, y, Inches(0.55), Inches(0.42), RED, radius=True)
-        textbox(s, MARGIN + Inches(0.12), y + Inches(0.05), Inches(0.4), Inches(0.35), num, 12, True, WHITE, PP_ALIGN.CENTER)
-        textbox(s, MARGIN + Inches(0.75), y + Inches(0.06), Inches(9), Inches(0.35), title, 13, False, SILVER)
-        y += Inches(0.48)
-    footer(s)
+    y = CONTENT_TOP + Inches(0.1)
+    for item in items:
+        num, rest = item[:2], item[3:]
+        rect(s, CONTENT_LEFT, y, Inches(0.48), Inches(0.38), RED, radius=True)
+        textbox(s, CONTENT_LEFT + Inches(0.1), y + Inches(0.04), Inches(0.35), Inches(0.3),
+                num, 11, True, WHITE, PP_ALIGN.CENTER)
+        textbox(s, CONTENT_LEFT + Inches(0.62), y + Inches(0.06), Inches(10), Inches(0.32), rest, 12, False, TEXT)
+        y += Inches(0.46)
+
+
+def slide_section_divider(prs, num: str, title: str, subtitle: str = ""):
+    s = add_blank_slide(prs)
+    fill_bg(s, WHITE)
+    rect(s, Inches(0), Inches(0), Inches(0.28), SLIDE_H, RED)
+    rect(s, Inches(0), Inches(0), SLIDE_W, Inches(0.045), RED)
+    add_logo(s, DAMAC_LOGO, MARGIN, Inches(0.12), Inches(0.38))
+    add_logo(s, CMCS_LOGO, Inches(10.85), Inches(0.08), Inches(0.44))
+    rect(s, Inches(0), FOOTER_TOP, SLIDE_W, Inches(0.78), LIGHT_GRAY)
+    rect(s, Inches(0), FOOTER_TOP, SLIDE_W, Inches(0.02), RED)
+    textbox(s, MARGIN, Inches(6.82), Inches(7.5), Inches(0.28),
+            "DAMAC | Enterprise AI Governance & Intelligence Layer for PMWeb", 8, False, MUTED)
+    textbox(s, Inches(0.55), Inches(2.5), Inches(1.5), Inches(0.7), num, 40, True, RED)
+    textbox(s, Inches(0.55), Inches(3.25), Inches(11), Inches(0.9), title, 30, True, BLACK)
+    if subtitle:
+        textbox(s, Inches(0.55), Inches(4.25), Inches(10), Inches(0.55), subtitle, 14, False, MUTED)
 
 
 def slide_exec_summary(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 01", "Executive Summary",
-                   "Transforming PMWeb with governed enterprise AI — not uncontrolled connectivity")
-    bullets(s, MARGIN, Inches(2.6), Inches(11.5), Inches(4.2), [
-        "DAMAC's procurement and commercial workflows on PMWeb generate high-value data trapped in documents, tenders, and contracts.",
-        "Manual summarization, tender analysis, and executive reporting create bottlenecks and visibility gaps.",
-        "AI can accelerate decisions — but only when deployed as a governed intelligence layer over enterprise truth.",
-        "Recommended path: Enterprise AI Orchestration Layer between PMWeb APIs and Claude/OpenAI models.",
+    slide_chrome(s, "Section 01", "Executive Summary",
+                 "Governed enterprise AI over PMWeb — not uncontrolled connectivity")
+    bullets(s, CONTENT_LEFT, CONTENT_TOP, Inches(7.8), Inches(4.8), [
+        "Procurement and commercial workflows on PMWeb generate high-value data trapped in documents and contracts.",
+        "Manual summarization and tender analysis create bottlenecks and visibility gaps for leadership.",
+        "AI accelerates decisions only when deployed as a governed intelligence layer over enterprise truth.",
+        f"Recommended AI platform: {RECOMMENDED_AI} behind an Enterprise Orchestration Layer.",
         "Start with contract intelligence POC; scale to DAMAC AI Governance Platform.",
-    ], 14, SILVER)
-    rect(s, Inches(9.5), Inches(2.8), Inches(3.2), Inches(3.5), CARD, RED, radius=True)
-    textbox(s, Inches(9.7), Inches(3.0), Inches(2.8), Inches(0.5), "Strategic Thesis", 14, True, RED)
-    textbox(s, Inches(9.7), Inches(3.6), Inches(2.8), Inches(2.5),
-            '"AI should explain enterprise truth,\nnot derive uncontrolled truth."', 13, True, WHITE, PP_ALIGN.CENTER)
-    footer(s)
+    ], 13)
+    rect(s, Inches(8.7), CONTENT_TOP, Inches(4.0), Inches(3.2), RED_TINT, RED, radius=True)
+    textbox(s, Inches(8.9), CONTENT_TOP + Inches(0.2), Inches(3.6), Inches(0.35),
+            "Strategic Thesis", 13, True, RED)
+    textbox(s, Inches(8.9), CONTENT_TOP + Inches(0.7), Inches(3.6), Inches(2.2),
+            '"AI should explain enterprise truth,\nnot derive uncontrolled truth."', 12, True, BLACK, PP_ALIGN.CENTER)
 
 
 def slide_challenges(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 01", "Current Challenges", "Operational friction across procurement & commercial management")
-    challenges = [
-        ("Manual Effort", "Heavy manual work in procurement/commercial workflows — bid packs, BAFO comparisons, CO approvals."),
-        ("No Executive Summaries", "Leadership lacks concise, trusted summaries of tenders, contracts, and commitments."),
-        ("Slow Tender Cycles", "Tender decision cycles delayed by document review, vendor comparison, and deviation analysis."),
-        ("Limited Visibility", "Management cannot query project/package status, unit mix, or vendor insights on demand."),
-        ("Governance Gap", "No enterprise AI layer — risk of shadow AI tools and ungoverned database access."),
+    slide_chrome(s, "Section 01", "Current Challenges",
+                 "Operational friction across procurement & commercial management")
+    data = [
+        ("Manual Effort", "Heavy manual work in bid packs, BAFO comparisons, and CO approvals."),
+        ("No Executive Summaries", "Leadership lacks trusted summaries of tenders and contracts."),
+        ("Slow Tender Cycles", "Decisions delayed by document review and deviation analysis."),
+        ("Limited Visibility", "No on-demand access to project status, unit mix, or vendor insights."),
+        ("Governance Gap", "Risk of shadow AI and ungoverned database access."),
     ]
-    positions = [
-        (MARGIN, Inches(2.5)), (Inches(4.6), Inches(2.5)), (Inches(8.7), Inches(2.5)),
-        (MARGIN, Inches(4.6)), (Inches(4.6), Inches(4.6)),
-    ]
-    icons = ["⚙", "📊", "⏱", "👁", "⚠"]
-    for (left, top), (title, body), icon in zip(positions, challenges, icons):
-        card(s, left, top, Inches(3.7), Inches(1.85), title, [body], icon)
-    footer(s)
+    w, h = Inches(3.75), Inches(1.75)
+    for i, (t, b) in enumerate(data):
+        col, row = i % 3, i // 3
+        card(s, CONTENT_LEFT + col * Inches(4.0), CONTENT_TOP + row * Inches(1.95), w, h, t, [b])
 
 
 def slide_current_vs_future(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 01", "Current State vs Future State",
-                   "Visual transformation narrative for boardroom stakeholders")
-    # Current
-    rect(s, MARGIN, Inches(2.4), Inches(5.8), Inches(4.2), CARD, MUTED, radius=True)
-    textbox(s, MARGIN + Inches(0.3), Inches(2.6), Inches(5), Inches(0.4), "CURRENT STATE", 16, True, MUTED)
-    bullets(s, MARGIN + Inches(0.3), Inches(3.1), Inches(5.2), Inches(3.3), [
+    slide_chrome(s, "Section 01", "Current State vs Future State",
+                 "Transformation narrative for boardroom stakeholders")
+    cw = Inches(5.75)
+    rect(s, CONTENT_LEFT, CONTENT_TOP, cw, Inches(4.5), LIGHT_GRAY, BORDER, radius=True)
+    textbox(s, CONTENT_LEFT + Inches(0.25), CONTENT_TOP + Inches(0.15), Inches(4), Inches(0.35),
+            "CURRENT STATE", 14, True, MUTED)
+    bullets(s, CONTENT_LEFT + Inches(0.25), CONTENT_TOP + Inches(0.55), cw - Inches(0.5), Inches(3.8), [
         "Manual contract & tender summarization",
         "Fragmented document repositories",
         "Reactive management reporting",
         "Siloed PMWeb data access",
         "No AI audit trail or governance",
-        "Shadow AI experimentation risk",
-    ], 12, SILVER)
-    # Arrow
-    textbox(s, Inches(6.55), Inches(4.2), Inches(0.8), Inches(0.6), "→", 48, True, RED, PP_ALIGN.CENTER)
-    # Future
-    rect(s, Inches(7.0), Inches(2.4), Inches(5.8), Inches(4.2), CARD, RED, radius=True)
-    textbox(s, Inches(7.3), Inches(2.6), Inches(5), Inches(0.4), "FUTURE STATE", 16, True, RED)
-    bullets(s, Inches(7.3), Inches(3.1), Inches(5.2), Inches(3.3), [
+    ], 11)
+    textbox(s, Inches(6.55), CONTENT_TOP + Inches(1.8), Inches(0.6), Inches(0.5), "→", 40, True, RED, PP_ALIGN.CENTER)
+    rect(s, Inches(7.0), CONTENT_TOP, cw, Inches(4.5), RED_TINT, RED, radius=True)
+    textbox(s, Inches(7.25), CONTENT_TOP + Inches(0.15), Inches(4), Inches(0.35),
+            "FUTURE STATE", 14, True, RED)
+    bullets(s, Inches(7.25), CONTENT_TOP + Inches(0.55), cw - Inches(0.5), Inches(3.8), [
         "AI-assisted governance & summarization",
         "Enterprise Knowledge Layer + RAG",
         "Executive AI chatbot with citations",
         "Governed API orchestration to PMWeb",
-        "Full audit, RBAC & prompt logging",
         "DAMAC AI Governance Platform",
-    ], 12, WHITE)
-    textbox(s, MARGIN, Inches(6.55), Inches(12), Inches(0.35),
-            "Opportunity: AI-assisted governance — not ungoverned AI connectivity", 12, True, RED_SOFT, PP_ALIGN.CENTER)
-    footer(s)
+    ], 11, TEXT)
+    callout(s, CONTENT_LEFT, Inches(6.0), CONTENT_WIDTH,
+            "Opportunity: AI-assisted governance — not ungoverned AI connectivity")
 
 
 def slide_use_cases_intro(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 02", "DAMAC PMWeb Use Cases",
-                   "High-value AI scenarios aligned to procurement, commercial & management needs")
-    card(s, MARGIN, Inches(2.5), Inches(3.7), Inches(3.8), "Commitment / CO Approval", [
+    slide_chrome(s, "Section 02", "DAMAC PMWeb Use Cases",
+                 "Procurement, commercial & management scenarios")
+    card(s, CONTENT_LEFT, CONTENT_TOP, Inches(3.75), Inches(4.5), "Commitment / CO Approval", [
         "Bid summarization & BAFO comparison",
         "Technical recommendations & benchmarking",
         "Deviations, exclusions & T&C summaries",
-    ], "✓")
-    card(s, Inches(4.85), Inches(2.5), Inches(3.7), Inches(3.8), "Contract Intelligence", [
+    ])
+    card(s, Inches(4.75), CONTENT_TOP, Inches(3.75), Inches(4.5), "Contract Intelligence", [
         "AI clause extraction & summarization",
         "Auto-population of PMWeb fields",
         "Contract intelligence repository",
-    ], "📄")
-    card(s, Inches(8.55), Inches(2.5), Inches(3.7), Inches(3.8), "Management AI Chatbot", [
+    ])
+    card(s, Inches(8.85), CONTENT_TOP, Inches(3.75), Inches(4.5), "Management AI Chatbot", [
         "Project & package status queries",
         "Building config, unit mix, awards",
         "Vendor & subcontractor insights",
-    ], "💬")
-    footer(s)
+    ])
 
 
 def slide_commitment_use_case(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 02", "Use Case 1 — Commitment / CO Approval Summarization",
-                   "Accelerate procurement decisions with governed AI intelligence")
-    workflows = [
-        ("Bid Summarization", "Structured executive summaries from tender submissions"),
-        ("BAFO Vendor Comparison", "Side-by-side commercial & technical comparison matrices"),
-        ("Technical Recommendations", "AI-assisted evaluation summaries with citations"),
-        ("Historical Benchmarking", "Compare against prior awards and market benchmarks"),
-        ("Deviations / Exclusions", "Highlight material deviations from standard terms"),
+    slide_chrome(s, "Section 02", "Use Case 1 — Commitment / CO Approval",
+                 "Accelerate procurement decisions with governed AI")
+    items = [
+        ("Bid Summarization", "Executive summaries from tender submissions"),
+        ("BAFO Comparison", "Commercial & technical comparison matrices"),
+        ("Technical Recommendations", "Evaluation summaries with citations"),
+        ("Historical Benchmarking", "Compare against prior awards"),
+        ("Deviations / Exclusions", "Highlight material deviations"),
         ("Contract T&Cs Summary", "Condensed terms for approval committees"),
     ]
-    x, y = MARGIN, Inches(2.5)
-    for i, (t, b) in enumerate(workflows):
+    w, h = Inches(3.85), Inches(1.55)
+    for i, (t, b) in enumerate(items):
         col, row = i % 3, i // 3
-        card(s, x + col * Inches(4.05), y + row * Inches(2.05), Inches(3.85), Inches(1.85), t, [b], "▸")
-    # workflow diagram center bottom
-    rect(s, MARGIN, Inches(6.35), Inches(12.2), Inches(0.55), CHARCOAL, RED, radius=True)
-    textbox(s, MARGIN + Inches(0.2), Inches(6.42), Inches(11.8), Inches(0.4),
-            "PMWeb Tender → Document Ingestion → RAG → AI Summarization → Human Approval → PMWeb Update",
-            11, False, SILVER, PP_ALIGN.CENTER)
-    footer(s)
+        card(s, CONTENT_LEFT + col * Inches(4.02), CONTENT_TOP + row * Inches(1.72), w, h, t, [b])
+    callout(s, CONTENT_LEFT, Inches(5.95), CONTENT_WIDTH,
+            "PMWeb → Ingestion → RAG → Claude Summarization → Human Approval → PMWeb API")
 
 
 def slide_contract_use_case(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 02", "Use Case 2 — AI-Assisted Contract Summarization",
-                   "Reduce manual effort while preserving enterprise control")
-    card(s, MARGIN, Inches(2.5), Inches(5.5), Inches(2.2), "AI Clause Extraction", [
-        "Identify key clauses: payment, LDs, warranties, termination",
-        "Map extracted data to PMWeb contract schema fields",
-    ], "§")
-    card(s, MARGIN, Inches(4.9), Inches(5.5), Inches(2.0), "Auto-Population of PMWeb Fields", [
-        "Structured outputs feed governed API writes — never raw AI-to-DB",
-        "Human-in-the-loop validation before PMWeb record updates",
-    ], "↻")
-    card(s, Inches(6.3), Inches(2.5), Inches(6.4), Inches(4.4), "Contract Intelligence Workflow", [
-        "1. Upload contract PDF to secure ingestion pipeline",
-        "2. OCR + chunking + vector indexing (Enterprise Knowledge Layer)",
-        "3. Claude document intelligence extracts clauses & summaries",
-        "4. Orchestration validates schema, applies RBAC",
-        "5. Analyst reviews with citation-linked UI",
-        "6. Approved data synced to PMWeb via API",
-        "",
-        "Outcome: 60–80% reduction in manual summarization effort",
-    ], "◆")
-    footer(s)
+    slide_chrome(s, "Section 02", "Use Case 2 — AI-Assisted Contract Summarization",
+                 "Reduce manual effort with enterprise control")
+    card(s, CONTENT_LEFT, CONTENT_TOP, Inches(5.4), Inches(1.65), "AI Clause Extraction", [
+        "Payment, LDs, warranties, termination clauses",
+        "Mapped to PMWeb contract schema fields",
+    ])
+    card(s, CONTENT_LEFT, CONTENT_TOP + Inches(1.85), Inches(5.4), Inches(1.55),
+         "Auto-Population of PMWeb Fields", [
+             "Governed API writes only — never AI-to-database",
+             "Human-in-the-loop before record updates",
+         ])
+    card(s, Inches(6.35), CONTENT_TOP, Inches(6.35), Inches(3.4), "Contract Intelligence Workflow", [
+        "1. Secure contract PDF ingestion",
+        "2. OCR, chunking, vector indexing",
+        f"3. {RECOMMENDED_AI} extracts clauses & summaries",
+        "4. Orchestration validates schema + RBAC",
+        "5. Analyst reviews with citations",
+        "6. Approved data synced via PMWeb API",
+        "Outcome: 60–80% reduction in manual effort",
+    ])
 
 
 def slide_chatbot_use_case(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 02", "Use Case 3 — AI Chatbot for Management Queries",
-                   "Executive-grade conversational access to governed PMWeb intelligence")
+    slide_chrome(s, "Section 02", "Use Case 3 — Management AI Chatbot",
+                 "Conversational access to governed PMWeb intelligence")
     queries = [
-        ("Project / Package Status", "Real-time pipeline view across developments"),
+        ("Project / Package Status", "Pipeline view across developments"),
         ("Building Configuration", "Typology, floors, areas, specifications"),
-        ("Unit Mix", "Inventory breakdown by type, size, price band"),
-        ("Design Parameters", "Key design criteria and approval status"),
-        ("Awarded Values", "Contract values, variations, commitment status"),
-        ("Vendor / Subcontractor Insights", "Performance, awards, risk flags"),
+        ("Unit Mix", "Inventory by type, size, price band"),
+        ("Design Parameters", "Design criteria and approval status"),
+        ("Awarded Values", "Contract values, variations, commitments"),
+        ("Vendor Insights", "Performance, awards, risk flags"),
     ]
     for i, (t, b) in enumerate(queries):
-        col = i % 3
-        row = i // 3
-        card(s, MARGIN + col * Inches(4.05), Inches(2.5) + row * Inches(2.05), Inches(3.85), Inches(1.85), t, [b], "◉")
-    rect(s, MARGIN, Inches(6.35), Inches(12.2), Inches(0.55), CARD, RED, radius=True)
-    textbox(s, MARGIN + Inches(0.15), Inches(6.42), Inches(11.9), Inches(0.4),
-            "Every response: RBAC-filtered • Citation-linked • Audit-logged • No direct database inference",
-            11, True, RED_SOFT, PP_ALIGN.CENTER)
-    footer(s)
+        col, row = i % 3, i // 3
+        card(s, CONTENT_LEFT + col * Inches(4.02), CONTENT_TOP + row * Inches(1.72),
+             Inches(3.85), Inches(1.55), t, [b])
+    callout(s, CONTENT_LEFT, Inches(5.95), CONTENT_WIDTH,
+            "RBAC-filtered • Citation-linked • Audit-logged • No direct database inference")
 
 
 def slide_risk_intro(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 03", "Why Direct AI-to-PMWeb Is Risky",
-                   "Ungoverned connectivity exposes enterprise data and decision integrity")
+    slide_chrome(s, "Section 03", "Why Direct AI-to-PMWeb Is Risky",
+                 "Ungoverned connectivity threatens data and decision integrity")
     risks = [
-        ("Direct DB Access", "AI agents with SQL/DB credentials create irreversible data exposure and injection risk."),
-        ("Hallucinations", "LLMs can fabricate figures, vendors, or clauses — catastrophic in procurement decisions."),
-        ("Security Breach", "Uncontrolled prompts may leak PII, commercial terms, and vendor pricing across tenants."),
-        ("No Governance", "Shadow AI bypasses DAMAC policies, retention rules, and regional data residency."),
-        ("No Traceability", "Without audit logs, leadership cannot explain how an AI-derived answer was produced."),
-        ("Inaccurate Answers", "Stale embeddings, wrong document versions, and missing context produce silent errors."),
+        ("Direct DB Access", "SQL/DB credentials create exposure and injection risk."),
+        ("Hallucinations", "Fabricated figures or clauses are catastrophic in procurement."),
+        ("Security Breach", "Uncontrolled prompts may leak PII and commercial terms."),
+        ("No Governance", "Shadow AI bypasses DAMAC policies and data residency."),
+        ("No Traceability", "Leadership cannot explain how answers were produced."),
+        ("Inaccurate Answers", "Stale embeddings and wrong document versions."),
     ]
     for i, (t, b) in enumerate(risks):
         col, row = i % 3, i // 3
-        card(s, MARGIN + col * Inches(4.05), Inches(2.45) + row * Inches(2.05), Inches(3.85), Inches(1.85), t, [b], "✕")
-    textbox(s, MARGIN, Inches(6.5), Inches(12.2), Inches(0.45),
-            '"AI should explain enterprise truth, not derive uncontrolled truth."',
-            16, True, RED, PP_ALIGN.CENTER)
-    footer(s)
+        card(s, CONTENT_LEFT + col * Inches(4.02), CONTENT_TOP + row * Inches(1.72),
+             Inches(3.85), Inches(1.55), t, [b])
+    callout(s, CONTENT_LEFT, Inches(5.95), CONTENT_WIDTH,
+            '"AI should explain enterprise truth, not derive uncontrolled truth."')
 
 
 def slide_risk_diagram(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 03", "Anti-Pattern vs Recommended Pattern", "Architecture decision with enterprise consequences")
-    # Anti-pattern
-    rect(s, MARGIN, Inches(2.5), Inches(5.5), Inches(3.8), RGBColor(0x2A, 0x10, 0x10), RED_DARK, radius=True)
-    textbox(s, MARGIN + Inches(0.2), Inches(2.65), Inches(5), Inches(0.4), "✕ ANTI-PATTERN", 14, True, RED_SOFT)
-    arch_box(s, Inches(1.5), Inches(3.2), Inches(3.5), Inches(0.7), "Claude / OpenAI")
-    textbox(s, Inches(3.0), Inches(3.95), Inches(0.3), Inches(0.3), "↓", 20, True, RED)
-    arch_box(s, Inches(1.5), Inches(4.2), Inches(3.5), Inches(0.7), "Direct DB / SQL Access", "UNGOVERNED")
-    textbox(s, Inches(3.0), Inches(4.95), Inches(0.3), Inches(0.3), "↓", 20, True, RED)
-    arch_box(s, Inches(1.5), Inches(5.2), Inches(3.5), Inches(0.7), "PMWeb Database", "HIGH RISK")
-    bullets(s, MARGIN + Inches(0.2), Inches(5.95), Inches(5), Inches(1.2), [
-        "No RBAC • No citations • No audit",
-    ], 10, MUTED)
-    # Recommended
-    rect(s, Inches(7.0), Inches(2.5), Inches(5.8), Inches(3.8), RGBColor(0x10, 0x1A, 0x10), RED, radius=True)
-    textbox(s, Inches(7.2), Inches(2.65), Inches(5), Inches(0.4), "✓ RECOMMENDED", 14, True, WHITE)
-    layers = ["Management Experience", "AI Orchestration + Governance", "Enterprise Knowledge Layer (RAG)", "API / Integration Layer", "PMWeb"]
-    y = Inches(3.15)
-    for layer in layers:
-        arch_box(s, Inches(7.8), y, Inches(4.2), Inches(0.52), layer)
+    slide_chrome(s, "Section 03", "Anti-Pattern vs Recommended Pattern",
+                 "Architecture decision with enterprise consequences")
+    rect(s, CONTENT_LEFT, CONTENT_TOP, Inches(5.6), Inches(4.35), LIGHT_GRAY, BORDER, radius=True)
+    textbox(s, CONTENT_LEFT + Inches(0.2), CONTENT_TOP + Inches(0.12), Inches(4), Inches(0.3),
+            "✕  ANTI-PATTERN", 13, True, RED)
+    cx = CONTENT_LEFT + Inches(1.0)
+    y = CONTENT_TOP + Inches(0.65)
+    for lbl in ["Claude / OpenAI", "Direct DB / SQL", "PMWeb Database"]:
+        arch_box(s, cx, y, Inches(3.6), Inches(0.58), lbl)
+        textbox(s, cx + Inches(1.65), y + Inches(0.58), Inches(0.3), Inches(0.25), "▼", 12, True, RED, PP_ALIGN.CENTER)
+        y += Inches(0.88)
+    textbox(s, CONTENT_LEFT + Inches(0.2), y + Inches(0.1), Inches(5), Inches(0.3),
+            "No RBAC • No citations • No audit", 10, False, MUTED)
+
+    rect(s, Inches(6.95), CONTENT_TOP, Inches(5.75), Inches(4.35), RED_TINT, RED, radius=True)
+    textbox(s, Inches(7.15), CONTENT_TOP + Inches(0.12), Inches(4), Inches(0.3),
+            "✓  RECOMMENDED", 13, True, RED_DARK)
+    y = CONTENT_TOP + Inches(0.55)
+    for lbl in ["Management Experience", "AI Orchestration + Governance",
+                "Enterprise Knowledge Layer", "API / Integration Layer", "PMWeb"]:
+        arch_box(s, Inches(7.5), y, Inches(4.7), Inches(0.52), lbl, highlight=(lbl == "PMWeb"))
         y += Inches(0.62)
-    footer(s)
 
 
 def slide_architecture(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 04", "Recommended Enterprise Architecture",
-                   "Governed intelligence layer — cloud-native, auditable, API-first")
+    slide_chrome(s, "Section 04", "Recommended Enterprise Architecture",
+                 "Governed intelligence layer — API-first, auditable, cloud-native")
     layers = [
-        ("Management Experience Layer", "Executive dashboards • AI chatbot • Approval workflows • Citations UI"),
-        ("Claude / OpenAI", "Document intelligence • Reasoning • Orchestration assist • Model routing"),
-        ("AI Orchestration Layer", "Prompt mgmt • Model routing • Guardrails • Human-in-loop • Cost controls"),
-        ("Enterprise Knowledge Layer", "Vector DB • RAG • Document ingestion • Embeddings • Version control"),
-        ("API / Integration Layer", "PMWeb APIs • Event bus • ETL • Schema validation • Rate limiting"),
-        ("PMWeb", "System of record • Contracts • Tenders • Projects • Commercial data"),
+        ("Management Experience Layer", "Dashboards • Chatbot • Approvals • Citations"),
+        (RECOMMENDED_AI, "Document intelligence • Reasoning • Summarization"),
+        ("AI Orchestration Layer", "Guardrails • Human-in-loop • Audit • Cost control"),
+        ("Enterprise Knowledge Layer", "Vector DB • RAG • Ingestion • Versioning"),
+        ("API / Integration Layer", "PMWeb APIs • ETL • Schema validation"),
+        ("PMWeb", "System of record — contracts, tenders, projects"),
     ]
-    y = Inches(2.35)
-    w = Inches(10.5)
-    cx = Inches(1.5)
+    y = CONTENT_TOP
+    bw = Inches(9.8)
+    bx = Inches(2.0)
     for i, (title, sub) in enumerate(layers):
-        arch_box(s, cx, y, w, Inches(0.72), title, sub)
+        arch_box(s, bx, y, bw, Inches(0.62), title, sub, highlight=(RECOMMENDED_AI in title))
         if i < len(layers) - 1:
-            textbox(s, cx + w / 2 - Inches(0.15), y + Inches(0.72), Inches(0.4), Inches(0.25), "▼", 14, True, RED, PP_ALIGN.CENTER)
-        y += Inches(0.88)
-    # Side capabilities
-    caps = ["RBAC", "Audit Logs", "Prompt Logging", "Citation Tracking", "Vector DB", "RAG Pipeline"]
-    x = Inches(0.55)
-    for i, c in enumerate(caps):
-        rect(s, x, Inches(2.5) + i * Inches(0.85), Inches(0.85), Inches(0.65), RED if i % 2 == 0 else CARD_LIGHT, radius=True)
-        textbox(s, x - Inches(0.05), Inches(2.58) + i * Inches(0.85), Inches(0.95), Inches(0.5), c, 7, True, WHITE, PP_ALIGN.CENTER)
-    footer(s)
+            textbox(s, bx + bw / 2 - Inches(0.12), y + Inches(0.62), Inches(0.3), Inches(0.2),
+                    "▼", 11, True, RED, PP_ALIGN.CENTER)
+        y += Inches(0.72)
+    caps = "RBAC  |  Audit Logs  |  Prompt Logging  |  Citations  |  Vector DB  |  RAG"
+    callout(s, CONTENT_LEFT, Inches(6.05), CONTENT_WIDTH, caps, 10)
 
 
 def slide_rag_architecture(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 04", "RAG & Knowledge Architecture", "Retrieval-augmented generation with enterprise controls")
-    # Flow boxes
-    boxes = [
-        (Inches(0.6), "PMWeb\nDocuments"),
-        (Inches(2.5), "Ingestion\nPipeline"),
-        (Inches(4.4), "Chunking &\nEmbedding"),
-        (Inches(6.3), "Vector\nDatabase"),
-        (Inches(8.2), "RAG\nRetrieval"),
-        (Inches(10.1), "AI Orchestration\n+ LLM"),
-        (Inches(12.0), "Cited\nResponse"),
+    slide_chrome(s, "Section 04", "RAG & Knowledge Architecture",
+                 "Retrieval-augmented generation with enterprise controls")
+    labels = ["PMWeb Docs", "Ingestion", "Embedding", "Vector DB", "RAG", "Claude", "Response"]
+    n = len(labels)
+    gap = Inches(1.68)
+    x0 = Inches(0.45)
+    bw = Inches(1.45)
+    bh = Inches(0.95)
+    y = CONTENT_TOP + Inches(0.15)
+    for i, lbl in enumerate(labels):
+        left = x0 + i * gap
+        arch_box(s, left, y, bw, bh, lbl, highlight=(lbl == "Claude"))
+        if i < n - 1:
+            textbox(s, left + bw, y + Inches(0.32), Inches(0.22), Inches(0.25), "→", 14, True, RED, PP_ALIGN.CENTER)
+    comps = [
+        ("Document Ingestion", "PDF, Word, PMWeb exports — OCR and classification"),
+        ("Orchestration Engine", "Policy routing, fallbacks, evaluation hooks"),
+        ("AI Governance Layer", "PII redaction, output validation, kill switch"),
+        ("PMWeb APIs", "Read via APIs; write only after human approval"),
     ]
-    for i, (left, label) in enumerate(boxes):
-        arch_box(s, left, Inches(3.2), Inches(1.65), Inches(1.1), label.replace("\n", " "), "")
-        if i < len(boxes) - 1:
-            textbox(s, left + Inches(1.65), Inches(3.55), Inches(0.5), Inches(0.3), "→", 18, True, RED, PP_ALIGN.CENTER)
-    components = [
-        ("Document Ingestion", "PDF, Word, PMWeb exports — OCR, dedup, classification"),
-        ("Orchestration Engine", "LangChain / custom — routing, fallbacks, eval hooks"),
-        ("AI Governance Layer", "Policy engine, PII redaction, output validation, kill switch"),
-        ("PMWeb APIs", "Read via governed APIs; write only post human approval"),
-    ]
-    for i, (t, b) in enumerate(components):
-        card(s, MARGIN + (i % 2) * Inches(6.2), Inches(4.8) + (i // 2) * Inches(1.35), Inches(5.9), Inches(1.15), t, [b])
-    footer(s)
+    y2 = CONTENT_TOP + Inches(1.35)
+    for i, (t, b) in enumerate(comps):
+        card(s, CONTENT_LEFT + (i % 2) * Inches(6.15), y2 + (i // 2) * Inches(1.25),
+             Inches(5.85), Inches(1.05), t, [b])
 
 
 def slide_model_comparison(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 05", "AI Model Comparison", "Enterprise evaluation across four leading platforms")
-    headers = ["Capability", "Claude Enterprise", "OpenAI GPT-5/4.1", "Azure OpenAI", "Gemini Enterprise"]
+    slide_chrome(s, "Section 05", "AI Model Comparison",
+                 "Enterprise evaluation — single recommended platform")
+    headers = ["Capability", "Claude Enterprise", "OpenAI GPT-5/4.1", "Azure OpenAI", "Gemini"]
     rows = [
         ["Document Summarization", "★★★★★", "★★★★☆", "★★★★☆", "★★★★☆"],
         ["Contract Analysis", "★★★★★", "★★★★☆", "★★★★☆", "★★★☆☆"],
-        ["Coding / Orchestration", "★★★★☆", "★★★★★", "★★★★☆", "★★★☆☆"],
-        ["Ecosystem Maturity", "★★★★☆", "★★★★★", "★★★★★", "★★★★☆"],
-        ["API Flexibility", "★★★★★", "★★★★★", "★★★★☆", "★★★★☆"],
-        ["Enterprise Readiness", "★★★★★", "★★★★★", "★★★★★", "★★★★☆"],
-        ["Context Window", "200K–1M", "128K–1M", "128K", "1M–2M"],
         ["Hallucination Control", "★★★★★", "★★★★☆", "★★★★☆", "★★★☆☆"],
         ["Governance Capability", "★★★★★", "★★★★☆", "★★★★★", "★★★★☆"],
-        ["Integration Ease", "★★★★☆", "★★★★★", "★★★★★", "★★★★☆"],
-        ["Cost Optimization", "★★★★☆", "★★★★☆", "★★★☆☆", "★★★★☆"],
+        ["Context Window", "200K–1M", "128K–1M", "128K", "1M–2M"],
+        ["Enterprise Readiness", "★★★★★", "★★★★★", "★★★★★", "★★★★☆"],
+        ["PMWeb Fit (DAMAC)", "★★★★★", "★★★★☆", "★★★★☆", "★★★☆☆"],
     ]
-    add_table(s, MARGIN, Inches(2.35), Inches(12.2), Inches(4.5), headers, rows, font_size=8)
-    footer(s)
+    add_table(s, CONTENT_LEFT, CONTENT_TOP, CONTENT_WIDTH, Inches(3.6), headers, rows, 9)
+    callout(s, CONTENT_LEFT, Inches(5.15), CONTENT_WIDTH,
+            f"Recommendation: {RECOMMENDED_AI} — best fit for contract, tender & document intelligence")
 
 
 def slide_model_recommendation(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 05", "Recommended Option — Hybrid Architecture", "Best-of-breed model routing for DAMAC enterprise AI")
-    card(s, MARGIN, Inches(2.5), Inches(3.8), Inches(3.5), "Claude Enterprise", [
-        "Primary: document intelligence & summarization",
-        "Contract clause extraction & long-context analysis",
-        "Lowest hallucination risk for legal/commercial text",
-    ], "◆")
-    card(s, Inches(4.75), Inches(2.5), Inches(3.8), Inches(3.5), "OpenAI GPT-5 / 4.1", [
-        "Primary: orchestration & coding ecosystem",
-        "Agent frameworks, function calling, evals",
-        "Broad developer tooling & integrations",
-    ], "◇")
-    card(s, Inches(8.5), Inches(2.5), Inches(4.25), Inches(3.5), "Hybrid — Recommended", [
-        "Claude for document & contract intelligence",
-        "OpenAI for orchestration layer & code-gen",
-        "Azure OpenAI optional for ME data residency",
-        "Intelligent router optimizes cost & quality",
-    ], "★")
-    rect(s, MARGIN, Inches(6.2), Inches(12.2), Inches(0.65), CARD, RED, radius=True)
-    textbox(s, MARGIN + Inches(0.2), Inches(6.32), Inches(11.8), Inches(0.45),
-            "Long-term: Multi-model orchestration with unified governance — single DAMAC AI platform",
-            13, True, WHITE, PP_ALIGN.CENTER)
-    footer(s)
+    slide_chrome(s, "Section 05", "Recommended Platform",
+                 f"Single enterprise AI standard for DAMAC PMWeb intelligence")
+    rect(s, CONTENT_LEFT, CONTENT_TOP, CONTENT_WIDTH, Inches(4.35), RED_TINT, RED, radius=True)
+    rect(s, CONTENT_LEFT + Inches(0.35), CONTENT_TOP + Inches(0.25), Inches(1.55), Inches(0.36), RED, radius=True)
+    textbox(s, CONTENT_LEFT + Inches(0.45), CONTENT_TOP + Inches(0.3), Inches(1.4), Inches(0.3),
+            "RECOMMENDED", 11, True, WHITE, PP_ALIGN.CENTER)
+    textbox(s, CONTENT_LEFT + Inches(0.35), CONTENT_TOP + Inches(0.85), Inches(11), Inches(0.7),
+            RECOMMENDED_AI, 32, True, BLACK)
+    bullets(s, CONTENT_LEFT + Inches(0.35), CONTENT_TOP + Inches(1.75), Inches(11), Inches(2.5), [
+        "Primary enterprise AI for DAMAC PMWeb governance layer",
+        "Industry-leading document & contract summarization with long context",
+        "Lowest hallucination risk for legal, commercial, and procurement text",
+        "Strong enterprise governance: RBAC integration, audit, data controls",
+        "Consistent model family (Haiku / Sonnet / Opus) for cost-tiered workloads",
+        "Unified vendor relationship simplifies security review and DPAs",
+    ], 13, TEXT)
+    rect(s, CONTENT_LEFT, Inches(5.85), CONTENT_WIDTH, Inches(0.55), BLACK, radius=True)
+    textbox(s, CONTENT_LEFT + Inches(0.2), Inches(5.97), CONTENT_WIDTH - Inches(0.4), Inches(0.35),
+            "One platform. One governance model. Orchestration layer routes Haiku → Sonnet → Opus by task complexity.",
+            11, True, WHITE, PP_ALIGN.CENTER)
 
 
 def slide_pricing_tokens(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 06", "Enterprise API Pricing Comparison", "Per-million-token pricing — indicative May 2026 enterprise rates")
-    headers = ["Provider / Model", "Input ($/1M tokens)", "Output ($/1M tokens)", "Best For"]
+    slide_chrome(s, "Section 06", "Claude Enterprise API Pricing",
+                 "Per-million-token rates — primary cost model for DAMAC")
+    headers = ["Claude Model", "Input ($/1M)", "Output ($/1M)", "DAMAC Use Case"]
     rows = [
-        ["Claude Haiku 4.5", "$0.80", "$4.00", "High-volume retrieval, classification"],
-        ["Claude Sonnet 4.5", "$3.00", "$15.00", "Balanced summarization & analysis"],
-        ["Claude Opus 4.5", "$15.00", "$75.00", "Complex contracts, executive summaries"],
-        ["OpenAI GPT-4.1", "$2.00", "$8.00", "General enterprise workloads"],
-        ["OpenAI GPT-4.1 Mini", "$0.40", "$1.60", "Chatbot, lightweight queries"],
-        ["OpenAI GPT-5 class", "$12.00", "$48.00", "Advanced reasoning, agents"],
-        ["Azure OpenAI (GPT-4.1)", "$2.20", "$8.80", "ME residency, Microsoft ecosystem"],
-        ["Azure OpenAI (GPT-4.1 mini)", "$0.44", "$1.76", "Cost-optimized Azure deployment"],
+        ["Haiku 4.5", "$0.80", "$4.00", "Retrieval, classification, chatbot triage"],
+        ["Sonnet 4.5", "$3.00", "$15.00", "Contract & tender summarization"],
+        ["Opus 4.5", "$15.00", "$75.00", "Complex contracts, executive summaries"],
     ]
-    add_table(s, MARGIN, Inches(2.35), Inches(12.2), Inches(3.8), headers, rows, font_size=9)
-    textbox(s, MARGIN, Inches(6.35), Inches(12), Inches(0.4),
-            "* Indicative enterprise list pricing. Actual DAMAC rates subject to volume commits & Azure EA.",
-            9, False, MUTED)
-    footer(s)
+    add_table(s, CONTENT_LEFT, CONTENT_TOP, Inches(8.5), Inches(1.6), headers, rows, 10)
+    textbox(s, CONTENT_LEFT, CONTENT_TOP + Inches(1.85), Inches(11), Inches(0.3),
+            "Reference pricing (May 2026 indicative). Competitors shown for context only.", 9, False, MUTED)
+    headers2 = ["Provider", "Comparable Tier", "Input", "Output"]
+    rows2 = [
+        ["OpenAI", "GPT-4.1", "$2.00", "$8.00"],
+        ["Azure OpenAI", "GPT-4.1", "$2.20", "$8.80"],
+        ["Gemini", "Enterprise", "$1.50", "$6.00"],
+    ]
+    add_table(s, CONTENT_LEFT, CONTENT_TOP + Inches(2.25), Inches(8.5), Inches(1.5), headers2, rows2, 9)
+    bullets(s, CONTENT_LEFT, CONTENT_TOP + Inches(4.0), Inches(11), Inches(1.5), [
+        "DAMAC standardizes on Claude — no multi-vendor routing complexity",
+        "Prompt caching: up to 90% savings on repeated contract templates",
+        "RAG reduces tokens sent to Sonnet/Opus by pre-filtering relevant chunks",
+    ], 11)
 
 
 def slide_pricing_scenarios(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 06", "Monthly Enterprise Cost Scenarios", "Realistic DAMAC workload estimates")
-    headers = ["Use Case Scenario", "Volume", "Model Strategy", "Est. Monthly Cost (USD)"]
+    slide_chrome(s, "Section 06", "Monthly Enterprise Cost Scenarios",
+                 f"Realistic DAMAC workloads — {RECOMMENDED_AI}")
+    headers = ["Scenario", "Volume", "Claude Tier", "Est. Monthly (USD)"]
     rows = [
-        ["Contract Summaries", "1,000 / month", "Claude Sonnet + Haiku routing", "$8,500 – $14,000"],
-        ["Tender Summarizations", "200 / month", "Claude Sonnet (long docs)", "$4,200 – $7,500"],
-        ["Management Chatbot", "500 users, ~20 queries/day", "GPT-4.1 Mini + RAG", "$6,000 – $12,000"],
-        ["Combined Enterprise (Phase 3)", "All workloads", "Hybrid routing + caching", "$18,000 – $32,000"],
-        ["Full Platform (Phase 4)", "All + governance infra", "Hybrid + Azure option", "$35,000 – $55,000"],
+        ["Contract Summaries", "1,000 / month", "Sonnet + Haiku", "$8,500 – $14,000"],
+        ["Tender Summarizations", "200 / month", "Sonnet (long docs)", "$4,200 – $7,500"],
+        ["Management Chatbot", "500 users × 20 queries/day", "Haiku + Sonnet", "$5,500 – $10,500"],
+        ["Combined (Phase 3)", "All workloads + caching", "Tiered routing", "$16,000 – $28,000"],
+        ["Full Platform (Phase 4)", "All + governance infra", "Full stack", "$30,000 – $48,000"],
     ]
-    add_table(s, MARGIN, Inches(2.35), Inches(12.2), Inches(2.8), headers, rows, font_size=9)
-    textbox(s, MARGIN, Inches(5.3), Inches(12), Inches(0.4), "Cost Optimization Strategies", 14, True, RED)
-    bullets(s, MARGIN, Inches(5.75), Inches(12), Inches(1.2), [
-        "Prompt caching — up to 90% savings on repeated contract templates",
-        "RAG architecture — smaller models for retrieval, premium models for synthesis only",
-        "Hybrid AI routing — Haiku/Mini for triage, Sonnet/GPT-4.1 for generation",
-        "Batch processing — off-peak tender summarization at 50% discount",
-    ], 11, SILVER)
-    footer(s)
+    add_table(s, CONTENT_LEFT, CONTENT_TOP, CONTENT_WIDTH, Inches(2.6), headers, rows, 9)
+    textbox(s, CONTENT_LEFT, CONTENT_TOP + Inches(2.85), Inches(4), Inches(0.35),
+            "Cost Optimization Strategies", 13, True, RED)
+    bullets(s, CONTENT_LEFT, CONTENT_TOP + Inches(3.25), Inches(11), Inches(2.0), [
+        "Prompt caching for repeated tender and contract templates",
+        "Haiku for retrieval and chatbot triage; Sonnet for synthesis; Opus for complex packs only",
+        "RAG architecture limits context sent to premium models",
+        "Batch off-peak processing for non-urgent summarization",
+    ], 11)
 
 
 def slide_pricing_detail(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 06", "Procurement & Chatbot Cost Breakdown", "Per-use-case economics for business case validation")
-    headers = ["Cost Component", "Assumptions", "Claude Path", "OpenAI Path", "Hybrid (Rec.)"]
+    slide_chrome(s, "Section 06", "Per-Use-Case Cost Breakdown",
+                 "Business case validation — Claude Enterprise only")
+    headers = ["Use Case", "Token Assumption", "Model", "Cost / Unit", "Monthly Est."]
     rows = [
-        ["Contract summary (avg)", "~80K in / 4K out tokens", "$0.30", "$0.22", "$0.25"],
-        ["Tender BAFO pack (avg)", "~200K in / 8K out tokens", "$0.85", "$0.65", "$0.72"],
-        ["Chatbot query (avg)", "~2K in / 500 out tokens", "—", "$0.004", "$0.003"],
-        ["Monthly — 1000 contracts", "Sonnet-class", "$12,000", "$9,500", "$10,200"],
-        ["Monthly — 200 tenders", "Sonnet + long ctx", "$6,800", "$5,400", "$5,900"],
-        ["Monthly — 500 chatbot users", "Mini + RAG", "—", "$9,200", "$7,800"],
+        ["Contract summary", "~80K in / 4K out", "Sonnet", "$0.28", "$12,000"],
+        ["Tender BAFO pack", "~200K in / 8K out", "Sonnet", "$0.82", "$6,400"],
+        ["Chatbot query", "~2K in / 500 out", "Haiku", "$0.003", "$6,500"],
+        ["Executive summary", "~120K in / 6K out", "Opus", "$2.10", "$1,800"],
     ]
-    add_table(s, MARGIN, Inches(2.35), Inches(12.2), Inches(3.5), headers, rows, font_size=8)
-    rect(s, MARGIN, Inches(6.0), Inches(12.2), Inches(0.85), CARD, RED, radius=True)
-    textbox(s, MARGIN + Inches(0.25), Inches(6.1), Inches(11.7), Inches(0.65),
-            "Hybrid routing typically delivers 15–25% cost reduction vs single-vendor — with higher quality on documents",
-            12, True, WHITE, PP_ALIGN.CENTER)
-    footer(s)
+    add_table(s, CONTENT_LEFT, CONTENT_TOP, CONTENT_WIDTH, Inches(2.4), headers, rows, 9)
+    callout(s, CONTENT_LEFT, Inches(4.0), CONTENT_WIDTH,
+            "Scenarios: 1,000 contracts + 200 tenders + 500 chatbot users ≈ $22,000 – $26,000 / month at scale")
 
 
 def slide_roadmap(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 07", "Phased Implementation Strategy", "Disciplined delivery with measurable value at each gate")
+    slide_chrome(s, "Section 07", "Phased Implementation Strategy",
+                 "Disciplined delivery with measurable value at each gate")
     phases = [
         ("PHASE 1", "Contract Summarization POC", "2–3 weeks",
-         ["PMWeb API integration", "Document ingestion + RAG MVP", "Claude contract extraction", "Human-in-loop approval UI"]),
+         ["PMWeb API integration", "RAG MVP", "Claude extraction", "Approval UI"]),
         ("PHASE 2", "Tender Recommendation Engine", "4–6 weeks",
-         ["BAFO comparison automation", "Deviation & exclusion detection", "Historical benchmarking", "PMWeb workflow integration"]),
+         ["BAFO automation", "Deviation detection", "Benchmarking", "PMWeb workflows"]),
         ("PHASE 3", "Executive AI Chatbot", "2–3 months",
-         ["Management query interface", "RBAC + citation layer", "500-user pilot", "PMWeb real-time data sync"]),
-        ("PHASE 4", "Enterprise AI Governance Platform", "4–6 months",
-         ["Multi-model orchestration", "Full audit & compliance", "Predictive procurement analytics", "DAMAC-wide AI standards"]),
+         ["Management queries", "RBAC + citations", "500-user pilot", "PMWeb sync"]),
+        ("PHASE 4", "AI Governance Platform", "4–6 months",
+         ["Full audit & compliance", "Predictive analytics", "DAMAC AI standards"]),
     ]
-    x = MARGIN
-    for i, (phase, title, timeline, items) in enumerate(phases):
-        w = Inches(2.95)
-        rect(s, x + i * Inches(3.05), Inches(2.4), w, Inches(4.3), CARD, RED if i == 0 else CARD_LIGHT, radius=True)
-        textbox(s, x + i * Inches(3.05) + Inches(0.15), Inches(2.55), w - Inches(0.3), Inches(0.3), phase, 10, True, RED)
-        textbox(s, x + i * Inches(3.05) + Inches(0.15), Inches(2.85), w - Inches(0.3), Inches(0.55), title, 11, True, WHITE)
-        rect(s, x + i * Inches(3.05) + Inches(0.15), Inches(3.45), w - Inches(0.3), Inches(0.35), RED_DARK, radius=True)
-        textbox(s, x + i * Inches(3.05) + Inches(0.15), Inches(3.48), w - Inches(0.3), Inches(0.3), timeline, 10, True, WHITE, PP_ALIGN.CENTER)
-        bullets(s, x + i * Inches(3.05) + Inches(0.15), Inches(3.9), w - Inches(0.3), Inches(2.5), items, 9, SILVER)
-    footer(s)
+    pw = Inches(2.9)
+    for i, (ph, title, time, items) in enumerate(phases):
+        left = CONTENT_LEFT + i * Inches(3.02)
+        rect(s, left, CONTENT_TOP, pw, Inches(4.1), WHITE, RED if i == 0 else BORDER, radius=True)
+        textbox(s, left + Inches(0.12), CONTENT_TOP + Inches(0.12), pw - Inches(0.24), Inches(0.25), ph, 9, True, RED)
+        textbox(s, left + Inches(0.12), CONTENT_TOP + Inches(0.4), pw - Inches(0.24), Inches(0.5), title, 10, True, BLACK)
+        rect(s, left + Inches(0.12), CONTENT_TOP + Inches(0.95), pw - Inches(0.24), Inches(0.32), RED if i == 0 else LIGHT_GRAY, radius=True)
+        textbox(s, left + Inches(0.12), CONTENT_TOP + Inches(0.98), pw - Inches(0.24), Inches(0.28),
+                time, 9, True, WHITE if i == 0 else RED, PP_ALIGN.CENTER)
+        bullets(s, left + Inches(0.12), CONTENT_TOP + Inches(1.4), pw - Inches(0.24), Inches(2.5), items, 9, MUTED)
 
 
 def slide_roadmap_timeline(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 07", "Implementation Timeline", "Quarter-by-quarter delivery view")
+    slide_chrome(s, "Section 07", "Implementation Timeline",
+                 "Program duration: ~9–11 months | Quick win: 2–3 weeks")
     milestones = [
-        ("Week 1–3", "Phase 1", "Contract POC", Inches(0.8)),
-        ("Week 4–9", "Phase 2", "Tender Engine", Inches(3.5)),
-        ("Month 3–5", "Phase 3", "Executive Chatbot", Inches(6.2)),
-        ("Month 6–11", "Phase 4", "AI Governance Platform", Inches(8.9)),
+        ("Week 1–3", "Phase 1", "Contract POC"),
+        ("Week 4–9", "Phase 2", "Tender Engine"),
+        ("Month 3–5", "Phase 3", "Chatbot"),
+        ("Month 6–11", "Phase 4", "Governance Platform"),
     ]
-    rect(s, MARGIN, Inches(3.5), Inches(12.2), Inches(0.08), RED)
-    for time, phase, desc, left in milestones:
-        rect(s, left, Inches(3.15), Inches(0.15), Inches(0.5), RED)
-        rect(s, left - Inches(0.1), Inches(3.7), Inches(2.8), Inches(1.8), CARD, RED, radius=True)
-        textbox(s, left - Inches(0.05), Inches(3.82), Inches(2.6), Inches(0.3), time, 10, True, RED)
-        textbox(s, left - Inches(0.05), Inches(4.15), Inches(2.6), Inches(0.35), phase, 12, True, WHITE)
-        textbox(s, left - Inches(0.05), Inches(4.55), Inches(2.6), Inches(0.8), desc, 10, False, SILVER)
-    textbox(s, MARGIN, Inches(5.8), Inches(12), Inches(0.5),
-            "Total program: ~9–11 months to full DAMAC AI Governance Platform | Quick win in 2–3 weeks",
-            13, True, GOLD, PP_ALIGN.CENTER)
-    footer(s)
+    rect(s, CONTENT_LEFT, CONTENT_TOP + Inches(1.5), CONTENT_WIDTH, Inches(0.06), RED)
+    n = len(milestones)
+    step = CONTENT_WIDTH / n
+    for i, (time, phase, desc) in enumerate(milestones):
+        left = CONTENT_LEFT + i * step + Inches(0.1)
+        rect(s, left + step / 2 - Inches(0.06), CONTENT_TOP + Inches(1.35), Inches(0.12), Inches(0.22), RED)
+        rect(s, left, CONTENT_TOP + Inches(1.75), step - Inches(0.25), Inches(1.65), WHITE, BORDER, radius=True)
+        textbox(s, left + Inches(0.1), CONTENT_TOP + Inches(1.88), step - Inches(0.4), Inches(0.25), time, 9, True, RED)
+        textbox(s, left + Inches(0.1), CONTENT_TOP + Inches(2.15), step - Inches(0.4), Inches(0.3), phase, 11, True, BLACK)
+        textbox(s, left + Inches(0.1), CONTENT_TOP + Inches(2.5), step - Inches(0.4), Inches(0.6), desc, 10, False, MUTED)
+    callout(s, CONTENT_LEFT, Inches(5.5), CONTENT_WIDTH,
+            "Total program: 9–11 months to DAMAC AI Governance Platform")
 
 
 def slide_security(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 08", "Security & Governance Framework", "Enterprise controls aligned to DAMAC policies")
+    slide_chrome(s, "Section 08", "Security & Governance Framework",
+                 "Enterprise controls aligned to DAMAC policies")
     controls = [
-        ("RBAC", "Role-based access aligned to PMWeb permissions — procurement, commercial, executive tiers."),
-        ("Audit Logging", "Immutable logs: who asked what, which documents retrieved, which model, which output."),
-        ("Prompt Logging", "Full prompt/response capture for compliance review and incident investigation."),
-        ("AI Governance", "Policy engine: approved models, data classification rules, output validation gates."),
-        ("Human-in-the-Loop", "Mandatory analyst approval before any PMWeb write or commitment action."),
-        ("Data Privacy", "PII redaction, encryption at rest/transit, UAE data residency via Azure option."),
-        ("DAMAC Enterprise Controls", "SSO integration, retention policies, vendor DPAs, SOC2-aligned providers."),
-        ("Secure API Architecture", "API gateway, mTLS, secrets vault, zero direct DB credentials to AI."),
+        ("RBAC", "Aligned to PMWeb permissions — procurement, commercial, executive."),
+        ("Audit Logging", "Who asked, which documents, which model, which output."),
+        ("Prompt Logging", "Full capture for compliance and incident review."),
+        ("AI Governance", "Approved models, data rules, output validation gates."),
+        ("Human-in-the-Loop", "Mandatory approval before PMWeb writes."),
+        ("Data Privacy", "PII redaction, encryption, UAE residency options."),
+        ("DAMAC Controls", "SSO, retention policies, vendor DPAs, SOC2 providers."),
+        ("Secure APIs", "API gateway, mTLS, vault — zero DB credentials to AI."),
     ]
     for i, (t, b) in enumerate(controls):
         col, row = i % 4, i // 4
-        card(s, MARGIN + col * Inches(3.05), Inches(2.4) + row * Inches(2.15), Inches(2.85), Inches(1.95), t, [b], "🔒")
-    footer(s)
+        card(s, CONTENT_LEFT + col * Inches(3.02), CONTENT_TOP + row * Inches(2.05),
+             Inches(2.85), Inches(1.85), t, [b])
 
 
 def slide_governance_diagram(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 08", "AI Governance Control Plane", "Centralized policy enforcement across all AI workloads")
-    center_x, center_y = Inches(5.0), Inches(4.0)
-    rect(s, center_x, center_y, Inches(3.3), Inches(1.4), RED, radius=True)
-    textbox(s, center_x + Inches(0.15), center_y + Inches(0.35), Inches(3), Inches(0.7),
-            "AI Governance\nControl Plane", 14, True, WHITE, PP_ALIGN.CENTER)
+    slide_chrome(s, "Section 08", "AI Governance Control Plane",
+                 "Centralized policy enforcement across all workloads")
+    cx, cy = Inches(5.15), Inches(3.85)
+    rect(s, cx, cy, Inches(3.0), Inches(1.15), RED, radius=True)
+    textbox(s, cx + Inches(0.1), cy + Inches(0.28), Inches(2.8), Inches(0.6),
+            "AI Governance\nControl Plane", 13, True, WHITE, PP_ALIGN.CENTER)
     orbit = [
-        (Inches(1.0), Inches(2.8), "RBAC & SSO"),
-        (Inches(9.5), Inches(2.8), "Audit & Compliance"),
-        (Inches(1.0), Inches(5.2), "Prompt Management"),
-        (Inches(9.5), Inches(5.2), "Model Allowlist"),
-        (Inches(3.5), Inches(6.0), "Human Approval"),
-        (Inches(7.0), Inches(6.0), "Data Classification"),
+        (Inches(0.55), Inches(2.55), "RBAC & SSO"),
+        (Inches(9.85), Inches(2.55), "Audit & Compliance"),
+        (Inches(0.55), Inches(4.85), "Prompt Management"),
+        (Inches(9.85), Inches(4.85), "Model Allowlist"),
+        (Inches(3.2), Inches(5.55), "Human Approval"),
+        (Inches(7.1), Inches(5.55), "Data Classification"),
     ]
     for left, top, label in orbit:
-        arch_box(s, left, top, Inches(2.5), Inches(0.75), label)
-    footer(s)
+        arch_box(s, left, top, Inches(2.55), Inches(0.68), label)
 
 
 def slide_future_vision(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 09", "Future Vision — DAMAC AI Governance Platform",
-                   "From PMWeb intelligence to enterprise-wide procurement AI")
-    capabilities = [
-        ("Predictive Procurement Intelligence", "Forecast pricing trends, bid competitiveness, and award outcomes."),
-        ("AI Risk Scoring", "Automated vendor and subcontractor risk assessment across portfolio."),
-        ("Vendor Performance Intelligence", "Historical performance, SLA compliance, and anomaly patterns."),
-        ("Procurement Anomaly Detection", "Flag unusual pricing, scope gaps, and compliance deviations."),
-        ("Enterprise Project Intelligence", "Cross-project insights: cost, schedule, design, commercial."),
-        ("Executive Copilots", "Personalized AI advisors for CEO, CFO, and procurement leadership."),
+    slide_chrome(s, "Section 09", "Future Vision — DAMAC AI Governance Platform",
+                 "Enterprise-wide procurement and project intelligence")
+    caps = [
+        ("Predictive Procurement", "Pricing trends, bid competitiveness, award outcomes"),
+        ("AI Risk Scoring", "Vendor and subcontractor risk across portfolio"),
+        ("Vendor Performance", "SLA compliance and anomaly patterns"),
+        ("Anomaly Detection", "Unusual pricing, scope gaps, compliance deviations"),
+        ("Project Intelligence", "Cross-project cost, schedule, design insights"),
+        ("Executive Copilots", "AI advisors for CEO, CFO, procurement leadership"),
     ]
-    for i, (t, b) in enumerate(capabilities):
+    for i, (t, b) in enumerate(caps):
         col, row = i % 3, i // 3
-        card(s, MARGIN + col * Inches(4.05), Inches(2.45) + row * Inches(2.05), Inches(3.85), Inches(1.85), t, [b], "◎")
-    rect(s, MARGIN, Inches(6.35), Inches(12.2), Inches(0.55), CARD, RED, radius=True)
-    textbox(s, MARGIN + Inches(0.2), Inches(6.42), Inches(11.8), Inches(0.4),
-            "Vision: DAMAC AI Governance Platform — the trusted intelligence layer for all enterprise decisions",
-            12, True, WHITE, PP_ALIGN.CENTER)
-    footer(s)
+        card(s, CONTENT_LEFT + col * Inches(4.02), CONTENT_TOP + row * Inches(1.72),
+             Inches(3.85), Inches(1.55), t, [b])
+    callout(s, CONTENT_LEFT, Inches(5.95), CONTENT_WIDTH,
+            "Vision: DAMAC AI Governance Platform — trusted intelligence for all enterprise decisions")
 
 
 def slide_final_recommendation(prs):
     s = add_blank_slide(prs)
-    section_header(s, "SECTION 10", "Final Recommendation", "Consulting conclusion — path to governed enterprise AI")
-    recommendations = [
-        "Build the Enterprise AI Orchestration Layer first — before any production AI workloads.",
-        "Avoid direct AI-to-database architecture — enforce API-first, governed connectivity to PMWeb.",
-        "Deploy AI as a governed intelligence layer that explains enterprise truth with citations.",
-        "Start with Contract Intelligence POC (Phase 1) — 2–3 weeks to demonstrable value.",
-        "Adopt hybrid Claude + OpenAI architecture for document quality and orchestration depth.",
-        "Scale systematically to DAMAC AI Governance Platform over 9–11 months.",
-    ]
-    bullets(s, MARGIN, Inches(2.5), Inches(7.5), Inches(4.0), recommendations, 14, WHITE)
-    rect(s, Inches(8.5), Inches(2.5), Inches(4.25), Inches(3.8), CARD, RED, radius=True)
-    textbox(s, Inches(8.7), Inches(2.7), Inches(3.85), Inches(0.45), "Decision Ask", 16, True, RED)
-    bullets(s, Inches(8.7), Inches(3.3), Inches(3.85), Inches(2.8), [
+    slide_chrome(s, "Section 10", "Final Recommendation",
+                 "Consulting conclusion — governed enterprise AI for DAMAC")
+    bullets(s, CONTENT_LEFT, CONTENT_TOP, Inches(7.2), Inches(4.2), [
+        "Build the Enterprise AI Orchestration Layer first — before production AI workloads.",
+        "Avoid direct AI-to-database architecture — API-first governed PMWeb connectivity only.",
+        f"Standardize on {RECOMMENDED_AI} as the enterprise AI platform for PMWeb intelligence.",
+        "Deploy AI as a governed layer that explains enterprise truth with citations.",
+        "Start with Contract Intelligence POC (Phase 1) — demonstrable value in 2–3 weeks.",
+        "Scale to DAMAC AI Governance Platform over 9–11 months.",
+    ], 13)
+    rect(s, Inches(8.2), CONTENT_TOP, Inches(4.5), Inches(3.5), RED_TINT, RED, radius=True)
+    textbox(s, Inches(8.4), CONTENT_TOP + Inches(0.2), Inches(4.1), Inches(0.4), "Decision Ask", 14, True, RED)
+    bullets(s, Inches(8.4), CONTENT_TOP + Inches(0.7), Inches(4.1), Inches(2.6), [
         "Approve Phase 1 POC budget & team",
         "Nominate DAMAC executive sponsor",
         "Confirm PMWeb API access scope",
+        "Approve Claude Enterprise as AI standard",
         "Establish AI governance steering committee",
-    ], 12, SILVER)
-    textbox(s, MARGIN, Inches(6.5), Inches(12.2), Inches(0.5),
-            "The opportunity is not connecting AI to PMWeb — it is building the intelligence layer that governs how AI serves DAMAC.",
-            14, True, RED, PP_ALIGN.CENTER)
-    footer(s)
-
-
-def slide_section_divider(prs, num: str, title: str, subtitle: str = ""):
-    s = add_blank_slide(prs)
-    fill_bg(s)
-    accent_bar(s, Inches(0), Inches(0.1))
-    rect(s, Inches(0), Inches(0), Inches(0.35), SLIDE_H, RED)
-    red_swoosh(s, Inches(8.5), Inches(1.0), Inches(5), Inches(5.5))
-    textbox(s, MARGIN, Inches(2.8), Inches(2), Inches(0.6), num, 48, True, RED)
-    textbox(s, MARGIN, Inches(3.5), Inches(10), Inches(1.2), title, 32, True, WHITE)
-    if subtitle:
-        textbox(s, MARGIN, Inches(4.7), Inches(9), Inches(0.6), subtitle, 16, False, MUTED)
-    footer(s)
+    ], 11, TEXT)
+    callout(s, CONTENT_LEFT, Inches(5.85), CONTENT_WIDTH,
+            "Build the intelligence layer that governs how AI serves DAMAC — not ungoverned connectivity.")
 
 
 def slide_thank_you(prs):
     s = add_blank_slide(prs)
-    fill_bg(s)
-    accent_bar(s)
-    red_swoosh(s, Inches(4), Inches(2), Inches(5.5), Inches(4))
-    textbox(s, MARGIN, Inches(2.8), Inches(12), Inches(1.0), "Thank You", 44, True, WHITE, PP_ALIGN.CENTER)
-    textbox(s, MARGIN, Inches(4.0), Inches(12), Inches(0.6),
-            "Enterprise AI Governance & Intelligence Layer for PMWeb", 18, False, RED_SOFT, PP_ALIGN.CENTER)
-    textbox(s, MARGIN, Inches(5.0), Inches(12), Inches(0.5),
-            "CMCS | DAMAC AI Transformation | Confidential", 12, False, MUTED, PP_ALIGN.CENTER)
-    footer(s)
+    fill_bg(s, WHITE)
+    rect(s, Inches(0), Inches(0), SLIDE_W, Inches(0.06), RED)
+    add_logo(s, DAMAC_LOGO, Inches(5.0), Inches(0.5), Inches(0.5))
+    add_logo(s, CMCS_LOGO, Inches(5.35), Inches(1.15), Inches(0.52))
+    textbox(s, MARGIN, Inches(2.5), CONTENT_WIDTH, Inches(0.9), "Thank You", 40, True, BLACK, PP_ALIGN.CENTER)
+    textbox(s, MARGIN, Inches(3.5), CONTENT_WIDTH, Inches(0.5),
+            "Enterprise AI Governance & Intelligence Layer for PMWeb", 16, False, RED, PP_ALIGN.CENTER)
+    textbox(s, MARGIN, Inches(4.2), CONTENT_WIDTH, Inches(0.4),
+            "CMCS × DAMAC  |  Confidential", 12, False, MUTED, PP_ALIGN.CENTER)
 
 
 def build_presentation(output_path: Path) -> Path:
+    # Ensure logos exist
+    if not CMCS_LOGO.exists():
+        import subprocess
+        subprocess.run(["python3", str(Path(__file__).parent / "create_logos.py")], check=True)
+
     prs = prs_blank()
     slide_title(prs)
     slide_agenda(prs)
-    slide_section_divider(prs, "01", "Executive Summary",
-                          "Current challenges, opportunity, and transformation narrative")
+
+    slide_section_divider(prs, "01", "Executive Summary", "Challenges, opportunity, and transformation")
     slide_exec_summary(prs)
     slide_challenges(prs)
     slide_current_vs_future(prs)
-    slide_section_divider(prs, "02", "DAMAC PMWeb Use Cases",
-                          "Commitment approval, contract intelligence, management chatbot")
+
+    slide_section_divider(prs, "02", "DAMAC PMWeb Use Cases", "Commitment, contracts, management chatbot")
     slide_use_cases_intro(prs)
     slide_commitment_use_case(prs)
     slide_contract_use_case(prs)
     slide_chatbot_use_case(prs)
-    slide_section_divider(prs, "03", "Why Direct AI-to-PMWeb Is Risky",
-                          "Enterprise truth must be governed — not inferred from raw databases")
+
+    slide_section_divider(prs, "03", "Why Direct AI-to-PMWeb Is Risky", "Governed truth, not uncontrolled inference")
     slide_risk_intro(prs)
     slide_risk_diagram(prs)
-    slide_section_divider(prs, "04", "Recommended Enterprise Architecture",
-                          "API-first orchestration with knowledge layer and AI governance")
+
+    slide_section_divider(prs, "04", "Recommended Enterprise Architecture", "API-first orchestration and RAG")
     slide_architecture(prs)
     slide_rag_architecture(prs)
-    slide_section_divider(prs, "05", "AI Model Comparison",
-                          "Claude, OpenAI, Azure OpenAI, Gemini — hybrid recommendation")
+
+    slide_section_divider(prs, "05", "AI Model Comparison", f"Single recommendation: {RECOMMENDED_AI}")
     slide_model_comparison(prs)
     slide_model_recommendation(prs)
-    slide_section_divider(prs, "06", "Enterprise Pricing & Cost Optimization",
-                          "Token economics, scenarios, and hybrid routing savings")
+
+    slide_section_divider(prs, "06", "Enterprise Pricing", "Claude-centric cost model and scenarios")
     slide_pricing_tokens(prs)
     slide_pricing_scenarios(prs)
     slide_pricing_detail(prs)
-    slide_section_divider(prs, "07", "Implementation Strategy",
-                          "Phased roadmap from POC to DAMAC AI Governance Platform")
+
+    slide_section_divider(prs, "07", "Implementation Strategy", "Phased roadmap and timelines")
     slide_roadmap(prs)
     slide_roadmap_timeline(prs)
-    slide_section_divider(prs, "08", "Security & Governance",
-                          "RBAC, audit, human-in-the-loop, and DAMAC enterprise controls")
+
+    slide_section_divider(prs, "08", "Security & Governance", "RBAC, audit, human-in-the-loop")
     slide_security(prs)
     slide_governance_diagram(prs)
-    slide_section_divider(prs, "09", "Future Vision",
-                          "DAMAC AI Governance Platform — enterprise procurement intelligence")
+
+    slide_section_divider(prs, "09", "Future Vision", "DAMAC AI Governance Platform")
     slide_future_vision(prs)
-    slide_section_divider(prs, "10", "Final Recommendation",
-                          "Build orchestration first — scale governed intelligence across DAMAC")
+
+    slide_section_divider(prs, "10", "Final Recommendation", "Decision ask and next steps")
     slide_final_recommendation(prs)
     slide_thank_you(prs)
 

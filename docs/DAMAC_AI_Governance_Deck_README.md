@@ -10,7 +10,9 @@ Executive consulting presentation for DAMAC leadership and technology stakeholde
 
 ## Theme
 
-- **Brand:** CMCS black & red (corporate logo palette)
+- **Layout:** White/off-white slides with **black text** and **red accents** (not full dark slides)
+- **Logos:** CMCS (top-right) and DAMAC (top-left) on every content slide — see `assets/`
+- **AI Recommendation:** **Claude Enterprise** (single platform — not hybrid)
 - **Positioning:** Enterprise AI Governance & Intelligence Layer — **not** direct AI-to-PMWeb/database connectivity
 - **Style:** Premium McKinsey/Deloitte executive consulting deck
 
@@ -20,7 +22,7 @@ Executive consulting presentation for DAMAC leadership and technology stakeholde
 2. **DAMAC Use Cases** — CO approval, contract intelligence, management chatbot
 3. **Why Direct AI-to-PMWeb Is Risky** — Anti-pattern vs recommended pattern
 4. **Recommended Enterprise Architecture** — Layered architecture + RAG
-5. **AI Model Comparison** — Claude, OpenAI, Azure, Gemini + hybrid recommendation
+5. **AI Model Comparison** — Claude, OpenAI, Azure, Gemini + **Claude Enterprise recommendation**
 6. **Enterprise Pricing** — Token tables, scenarios, cost optimization
 7. **Implementation Strategy** — 4-phase roadmap with timelines
 8. **Security & Governance** — RBAC, audit, human-in-the-loop
