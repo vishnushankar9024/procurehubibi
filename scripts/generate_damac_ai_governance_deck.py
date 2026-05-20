@@ -46,6 +46,7 @@ FS_DISPLAY = 28      # title slide headline only
 
 ASSETS = Path(__file__).resolve().parents[1] / "assets"
 ICONS = ASSETS / "icons"
+DIAGRAMS = ASSETS / "diagrams"
 CMCS_LOGO = ASSETS / "cmcs_logo.png"
 CMCS_LOGO_H = Inches(0.34)
 CMCS_LOGO_X = Inches(11.55)
@@ -122,6 +123,18 @@ def add_image(slide, path: Path, left, top, height=None, width=None):
             return slide.shapes.add_picture(str(path), left, top, width=width)
         return slide.shapes.add_picture(str(path), left, top)
     return None
+
+
+def add_diagram(slide, filename: str, left, top, width=None, height=None):
+    """Embed pre-rendered diagram PNG with explicit width and/or height."""
+    path = DIAGRAMS / filename
+    if not path.exists():
+        return None
+    if height:
+        return add_image(slide, path, left, top, height=height)
+    if width:
+        return add_image(slide, path, left, top, width=width)
+    return add_image(slide, path, left, top)
 
 
 def draw_cmcs_logo(slide):
@@ -258,26 +271,8 @@ def slide_title(prs):
 def slide_agenda(prs):
     s = add_blank_slide(prs)
     slide_chrome(s, "Overview", "Agenda", "Boardroom executive briefing structure")
-    items = [
-        "01  Executive Summary & Current vs Future State",
-        "02  DAMAC PMWeb Use Cases",
-        "03  Why Direct AI-to-PMWeb Is Risky",
-        "04  Recommended Enterprise Architecture",
-        "05  AI Model Comparison & Recommendation",
-        "06  Enterprise Pricing & Cost Optimization",
-        "07  Phased Implementation Strategy",
-        "08  Security, Governance & Controls",
-        "09  Future Vision — DAMAC AI Governance Platform",
-        "10  Final Recommendation",
-    ]
-    y = CONTENT_TOP + Inches(0.1)
-    for item in items:
-        num, rest = item[:2], item[3:]
-        rect(s, CONTENT_LEFT, y, Inches(0.48), Inches(0.38), RED, radius=True)
-        textbox(s, CONTENT_LEFT + Inches(0.1), y + Inches(0.04), Inches(0.35), Inches(0.3),
-                num, FS_BODY, True, WHITE, PP_ALIGN.CENTER)
-        textbox(s, CONTENT_LEFT + Inches(0.62), y + Inches(0.06), Inches(10), Inches(0.32), rest, FS_BODY, False, TEXT)
-        y += Inches(0.46)
+    add_diagram(s, "agenda.png", CONTENT_LEFT, CONTENT_TOP,
+                width=CONTENT_WIDTH, height=Inches(4.55))
 
 
 def slide_section_divider(prs, num: str, title: str, subtitle: str = ""):
@@ -495,53 +490,26 @@ def slide_architecture(prs):
     s = add_blank_slide(prs)
     slide_chrome(s, "Section 04", "Recommended Enterprise Architecture",
                  "Governed intelligence layer — API-first, auditable, cloud-native")
-    layers = [
-        ("Management Experience Layer", "Dashboards • Chatbot • Approvals • Citations"),
-        (RECOMMENDED_AI, "Document intelligence • Reasoning • Summarization"),
-        ("AI Orchestration Layer", "Guardrails • Human-in-loop • Audit • Cost control"),
-        ("Enterprise Knowledge Layer", "Vector DB • RAG • Ingestion • Versioning"),
-        ("API / Integration Layer", "PMWeb APIs • ETL • Schema validation"),
-        ("PMWeb", "System of record — contracts, tenders, projects"),
-    ]
-    y = CONTENT_TOP
-    bw = Inches(9.8)
-    bx = Inches(2.0)
-    for i, (title, sub) in enumerate(layers):
-        arch_box(s, bx, y, bw, Inches(0.62), title, sub, highlight=(RECOMMENDED_AI in title))
-        if i < len(layers) - 1:
-            textbox(s, bx + bw / 2 - Inches(0.12), y + Inches(0.62), Inches(0.3), Inches(0.2),
-                    "▼", FS_BODY, True, RED, PP_ALIGN.CENTER)
-        y += Inches(0.72)
-    caps = "RBAC  |  Audit Logs  |  Prompt Logging  |  Citations  |  Vector DB  |  RAG"
-    callout(s, CONTENT_LEFT, CONTENT_BOTTOM - Inches(0.48), CONTENT_WIDTH, caps)
+    add_diagram(s, "architecture_stack.png", CONTENT_LEFT, CONTENT_TOP,
+                width=CONTENT_WIDTH, height=Inches(4.55))
 
 
 def slide_rag_architecture(prs):
     s = add_blank_slide(prs)
     slide_chrome(s, "Section 04", "RAG & Knowledge Architecture",
                  "Retrieval-augmented generation with enterprise controls")
-    labels = ["PMWeb Docs", "Ingestion", "Embedding", "Vector DB", "RAG", "Claude", "Response"]
-    n = len(labels)
-    gap = Inches(1.68)
-    x0 = Inches(0.45)
-    bw = Inches(1.45)
-    bh = Inches(0.95)
-    y = CONTENT_TOP + Inches(0.15)
-    for i, lbl in enumerate(labels):
-        left = x0 + i * gap
-        arch_box(s, left, y, bw, bh, lbl, highlight=(lbl == "Claude"))
-        if i < n - 1:
-            textbox(s, left + bw, y + Inches(0.32), Inches(0.22), Inches(0.25), "→", FS_BODY, True, RED, PP_ALIGN.CENTER)
+    add_diagram(s, "rag_pipeline.png", CONTENT_LEFT, CONTENT_TOP,
+                width=CONTENT_WIDTH, height=Inches(0.95))
     comps = [
         ("Document Ingestion", "PDF, Word, PMWeb exports — OCR and classification"),
         ("Orchestration Engine", "Policy routing, fallbacks, evaluation hooks"),
         ("AI Governance Layer", "PII redaction, output validation, kill switch"),
         ("PMWeb APIs", "Read via APIs; write only after human approval"),
     ]
-    y2 = CONTENT_TOP + Inches(1.35)
+    y2 = CONTENT_TOP + Inches(1.05)
     for i, (t, b) in enumerate(comps):
-        card(s, CONTENT_LEFT + (i % 2) * Inches(6.15), y2 + (i // 2) * Inches(1.25),
-             Inches(5.85), Inches(1.05), t, [b])
+        card(s, CONTENT_LEFT + (i % 2) * Inches(6.15), y2 + (i // 2) * Inches(1.22),
+             Inches(5.85), Inches(1.02), t, [b])
 
 
 def slide_model_comparison(prs):
@@ -559,7 +527,7 @@ def slide_model_comparison(prs):
         ["PMWeb Fit (DAMAC)", "★★★★★", "★★★★☆", "★★★★☆", "★★★☆☆"],
     ]
     add_table(s, CONTENT_LEFT, CONTENT_TOP, CONTENT_WIDTH, Inches(3.6), headers, rows)
-    callout(s, CONTENT_LEFT, Inches(5.15), CONTENT_WIDTH,
+    callout(s, CONTENT_LEFT, CONTENT_BOTTOM - Inches(0.5), CONTENT_WIDTH,
             f"Recommendation: {RECOMMENDED_AI} — best fit for contract, tender & document intelligence")
 
 
@@ -686,57 +654,11 @@ def slide_delivery_slope(prs):
     s = add_blank_slide(prs)
     slide_chrome(s, "Section 07", "Delivery Slope Definition",
                  "How capability, effort, and business value accelerate across the program")
-    # Definition panel
-    card(s, CONTENT_LEFT, CONTENT_TOP, Inches(5.6), Inches(2.15), "What Is the Delivery Slope?", [
-        "The slope is the rate at which DAMAC gains governed AI capability and business value.",
-        "Early weeks: foundation (APIs, RAG, governance shell) — lower visible value, critical risk reduction.",
-        "Mid program: steepening slope — tender intelligence and chatbot drive executive visibility.",
-        "Final weeks: plateau toward enterprise standard — full governance platform operational.",
-    ])
-    card(s, Inches(6.45), CONTENT_TOP, Inches(5.75), Inches(2.15), "Slope Dimensions", [
-        "Technical maturity: POC → production orchestration → enterprise control plane",
-        "User adoption: analyst pilots → procurement teams → executive management",
-        "Governance rigor: basic audit → RBAC + citations → full compliance & HITL",
-        "Business value: time saved on contracts → tender cycle compression → portfolio intelligence",
-    ])
-    # Ramp chart area
-    chart_l = CONTENT_LEFT
-    chart_t = CONTENT_TOP + Inches(2.45)
-    chart_w = CONTENT_WIDTH
-    chart_h = Inches(2.85)
-    rect(s, chart_l, chart_t, chart_w, chart_h, WHITE, BORDER, radius=True)
-    textbox(s, chart_l + Inches(0.15), chart_t + Inches(0.08), Inches(4), Inches(0.28),
-            "Value & Capability Ramp (2–3 Month Program)", FS_BODY, True, BLACK)
-    # Axes
-    ax_l = chart_l + Inches(0.55)
-    ax_b = chart_t + chart_h - Inches(0.45)
-    ax_w = chart_w - Inches(1.1)
-    ax_h = chart_h - Inches(0.95)
-    rect(s, ax_l, ax_b, ax_w, Inches(0.03), MUTED)
-    rect(s, ax_l, ax_b - ax_h, Inches(0.03), ax_h, MUTED)
-    textbox(s, ax_l - Inches(0.45), ax_b - ax_h / 2, Inches(0.4), Inches(0.5),
-            "Value", FS_CAPTION, True, MUTED, PP_ALIGN.CENTER)
-    # Slope line via segments (ascending bars = ramp)
-    phases_slope = [
-        ("Wk 1–3", "Foundation", 0.22),
-        ("Wk 4–6", "Accelerate", 0.45),
-        ("Wk 7–9", "Steep climb", 0.72),
-        ("Wk 10–12", "Enterprise", 1.0),
-    ]
-    bar_w = (ax_w - Inches(0.3)) / 4
-    for i, (wk, lbl, ht_frac) in enumerate(phases_slope):
-        bx = ax_l + Inches(0.15) + i * bar_w
-        bh = int(ax_h * ht_frac)
-        by = ax_b - bh
-        fill = RED if i >= 2 else RED_TINT
-        rect(s, bx, by, bar_w - Inches(0.12), bh, fill, RED if i >= 2 else BORDER, radius=True)
-        textbox(s, bx, ax_b + Inches(0.05), bar_w - Inches(0.12), Inches(0.22), wk, FS_CAPTION, True, RED, PP_ALIGN.CENTER)
-        textbox(s, bx, by - Inches(0.28), bar_w - Inches(0.12), Inches(0.25), lbl, FS_CAPTION, False, MUTED, PP_ALIGN.CENTER)
-    textbox(s, ax_l + ax_w - Inches(2.2), chart_t + Inches(0.35), Inches(2), Inches(0.3),
-            "↗ Delivery Slope", FS_CAPTION, True, RED, PP_ALIGN.RIGHT)
-    textbox(s, ax_l + Inches(0.1), ax_b + Inches(0.28), ax_w, Inches(0.22),
-            "Month 1          Month 2          Month 3  (10–12 weeks total)", FS_CAPTION, False, MUTED, PP_ALIGN.CENTER)
-    callout(s, CONTENT_LEFT, CONTENT_BOTTOM - Inches(0.48), CONTENT_WIDTH,
+    add_diagram(s, "delivery_slope_cards.png", CONTENT_LEFT, CONTENT_TOP,
+                width=CONTENT_WIDTH, height=Inches(1.28))
+    add_diagram(s, "delivery_slope_chart.png", CONTENT_LEFT, CONTENT_TOP + Inches(1.38),
+                width=CONTENT_WIDTH, height=Inches(2.55))
+    callout(s, CONTENT_LEFT, CONTENT_BOTTOM - Inches(0.5), CONTENT_WIDTH,
             "Target: complete Phases 1–4 in 2–3 months | Accelerated track: ~8–10 weeks with parallel squads")
 
 
@@ -864,7 +786,7 @@ def slide_thank_you(prs):
 
 def build_presentation(output_path: Path) -> Path:
     # Ensure logos exist
-    if not CMCS_LOGO.exists() or not (ICONS / "quote.png").exists():
+    if not (DIAGRAMS / "agenda.png").exists():
         import subprocess
         subprocess.run(["python3", str(Path(__file__).parent / "create_assets.py")], check=True)
 
