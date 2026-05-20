@@ -231,24 +231,51 @@ def add_table(slide, left, top, width, height, headers, rows, font_size=FS_BODY)
 def arch_box(slide, left, top, w, h, label: str, sub: str = "", highlight=False):
     fill = RED_TINT if highlight else WHITE
     line = RED if highlight else BORDER
-    rect(slide, left, top, w, h, fill, line, radius=True)
-    if highlight:
-        rect(slide, left, top, Inches(0.07), h, RED)
-    pad = Inches(0.12)
-    textbox(slide, left + pad, top + Inches(0.1), w - pad * 2, Inches(0.28),
+    lw = Pt(2) if highlight else Pt(0.75)
+    st = MSO_AUTO_SHAPE_TYPE.ROUNDED_RECTANGLE
+    s = slide.shapes.add_shape(st, left, top, w, h)
+    s.fill.solid()
+    s.fill.fore_color.rgb = fill
+    s.line.color.rgb = line
+    s.line.width = lw
+    pad = Inches(0.14)
+    textbox(slide, left + pad, top + Inches(0.09), w - pad * 2, Inches(0.26),
             label, FS_BODY, True, BLACK if not highlight else RED_DARK, PP_ALIGN.CENTER)
     if sub:
-        textbox(slide, left + pad, top + Inches(0.38), w - pad * 2, h - Inches(0.44),
+        textbox(slide, left + pad, top + Inches(0.36), w - pad * 2, h - Inches(0.42),
                 sub, FS_BODY, False, MUTED, PP_ALIGN.CENTER)
 
 
+def _centered_left(total_w, area_w=CONTENT_WIDTH, area_l=CONTENT_LEFT):
+    return area_l + (area_w - total_w) / 2
+
+
+def _down_arrow(slide, center_x, top):
+    aw, ah = Inches(0.16), Inches(0.1)
+    left = center_x - aw / 2
+    sh = slide.shapes.add_shape(MSO_AUTO_SHAPE_TYPE.ISOSCELES_TRIANGLE, left, top, aw, ah)
+    sh.fill.solid()
+    sh.fill.fore_color.rgb = RED
+    sh.line.fill.background()
+    sh.rotation = 180.0
+
+
+def _flow_arrow(slide, left, top, width=Inches(0.22)):
+    sh = slide.shapes.add_shape(
+        MSO_AUTO_SHAPE_TYPE.RIGHT_ARROW, left, top + Inches(0.28), width, Inches(0.14)
+    )
+    sh.fill.solid()
+    sh.fill.fore_color.rgb = RED
+    sh.line.fill.background()
+
+
 def draw_architecture_stack(slide):
-    """Native PowerPoint shapes — centered stack (not a flat image)."""
-    stack_w = Inches(10.0)
-    stack_l = (SLIDE_W - stack_w) // 2
-    box_h = Inches(0.58)
-    arrow_h = Inches(0.14)
-    cx = stack_l + stack_w // 2
+    """Centered native layer stack with symmetric styling."""
+    stack_w = Inches(9.6)
+    stack_l = _centered_left(stack_w, SLIDE_W, Inches(0))
+    cx = stack_l + stack_w / 2
+    box_h = Inches(0.54)
+    gap = Inches(0.1)
     layers = [
         ("Management Experience Layer", "Dashboards · Chatbot · Approvals · Citations", False),
         (RECOMMENDED_AI, "Document intelligence · Reasoning · Summarization", True),
@@ -257,19 +284,46 @@ def draw_architecture_stack(slide):
         ("API / Integration Layer", "PMWeb APIs · ETL · Schema validation", False),
         ("PMWeb", "System of record — contracts, tenders, projects", False),
     ]
-    y = CONTENT_TOP + Inches(0.06)
+    y = CONTENT_TOP + Inches(0.04)
     for i, (title, sub, highlight) in enumerate(layers):
         arch_box(slide, stack_l, y, stack_w, box_h, title, sub, highlight)
         y += box_h
         if i < len(layers) - 1:
-            textbox(slide, cx - Inches(0.14), y + Inches(0.01), Inches(0.28), arrow_h,
-                    "▼", FS_BODY, True, RED, PP_ALIGN.CENTER)
-            y += arrow_h
-    cap_h = Inches(0.42)
-    rect(slide, stack_l, y + Inches(0.06), stack_w, cap_h, RED_TINT, RED, radius=True)
-    textbox(slide, stack_l + Inches(0.15), y + Inches(0.14), stack_w - Inches(0.3), Inches(0.28),
+            _down_arrow(slide, cx, y + Inches(0.01))
+            y += gap
+    cap_h = Inches(0.4)
+    y += Inches(0.06)
+    rect(slide, stack_l, y, stack_w, cap_h, RED_TINT, RED, radius=True)
+    textbox(slide, stack_l + Inches(0.12), y + Inches(0.1), stack_w - Inches(0.24), Inches(0.28),
             "RBAC · Audit Logs · Prompt Logging · Citations · Vector DB · RAG",
             FS_BODY, True, RED_DARK, PP_ALIGN.CENTER)
+
+
+def flow_node(slide, left, top, w, h, label: str, highlight=False):
+    fill = RED_TINT if highlight else WHITE
+    line = RED if highlight else BORDER
+    rect(slide, left, top, w, h, fill, line, radius=True)
+    textbox(slide, left + Inches(0.04), top + Inches(0.22), w - Inches(0.08), Inches(0.35),
+            label, FS_BODY, True, RED_DARK if highlight else BLACK, PP_ALIGN.CENTER)
+
+
+def draw_rag_pipeline(slide):
+    """Centered horizontal RAG flow — native shapes."""
+    steps = ["PMWeb Docs", "Ingestion", "Embedding", "Vector DB", "RAG", "Claude", "Response"]
+    n = len(steps)
+    box_w = Inches(1.32)
+    arrow_w = Inches(0.2)
+    box_h = Inches(0.72)
+    row_w = n * box_w + (n - 1) * arrow_w
+    row_l = _centered_left(row_w)
+    y = CONTENT_TOP + Inches(0.05)
+    x = row_l
+    for i, lbl in enumerate(steps):
+        flow_node(slide, x, y, box_w, box_h, lbl, highlight=(lbl == "Claude"))
+        x += box_w
+        if i < n - 1:
+            _flow_arrow(slide, x, y)
+            x += arrow_w
 
 
 def callout(slide, left, top, width, text: str, size=FS_BODY):
@@ -530,18 +584,26 @@ def slide_rag_architecture(prs):
     s = add_blank_slide(prs)
     slide_chrome(s, "Section 04", "RAG & Knowledge Architecture",
                  "Retrieval-augmented generation with enterprise controls")
-    add_diagram(s, "rag_pipeline.png", CONTENT_LEFT, CONTENT_TOP,
-                width=CONTENT_WIDTH, height=Inches(0.95))
+    draw_rag_pipeline(s)
     comps = [
         ("Document Ingestion", "PDF, Word, PMWeb exports — OCR and classification"),
         ("Orchestration Engine", "Policy routing, fallbacks, evaluation hooks"),
         ("AI Governance Layer", "PII redaction, output validation, kill switch"),
         ("PMWeb APIs", "Read via APIs; write only after human approval"),
     ]
-    y2 = CONTENT_TOP + Inches(1.05)
-    for i, (t, b) in enumerate(comps):
-        card(s, CONTENT_LEFT + (i % 2) * Inches(6.15), y2 + (i // 2) * Inches(1.22),
-             Inches(5.85), Inches(1.02), t, [b])
+    col_gap = Inches(0.35)
+    card_w = (CONTENT_WIDTH - col_gap) / 2
+    card_h = Inches(1.08)
+    y2 = CONTENT_TOP + Inches(0.92)
+    row_gap = Inches(0.28)
+    positions = [
+        (CONTENT_LEFT, y2),
+        (CONTENT_LEFT + card_w + col_gap, y2),
+        (CONTENT_LEFT, y2 + card_h + row_gap),
+        (CONTENT_LEFT + card_w + col_gap, y2 + card_h + row_gap),
+    ]
+    for (left, top), (t, b) in zip(positions, comps):
+        card(s, left, top, card_w, card_h, t, [b])
 
 
 def slide_model_comparison(prs):
