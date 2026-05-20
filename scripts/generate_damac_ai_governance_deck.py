@@ -266,7 +266,7 @@ def slide_exec_summary(prs):
         "Manual summarization and tender analysis create bottlenecks and visibility gaps for leadership.",
         "AI accelerates decisions only when deployed as a governed intelligence layer over enterprise truth.",
         f"Recommended AI platform: {RECOMMENDED_AI} behind an Enterprise Orchestration Layer.",
-        "Start with contract intelligence POC; scale to DAMAC AI Governance Platform.",
+        "Deliver full scoped program in 2–3 months: POC → tender engine → chatbot → governance platform.",
     ], 13)
     rect(s, Inches(8.7), CONTENT_TOP, Inches(4.0), Inches(3.2), RED_TINT, RED, radius=True)
     textbox(s, Inches(8.9), CONTENT_TOP + Inches(0.2), Inches(3.6), Inches(0.35),
@@ -618,16 +618,16 @@ def slide_pricing_detail(prs):
 def slide_roadmap(prs):
     s = add_blank_slide(prs)
     slide_chrome(s, "Section 07", "Phased Implementation Strategy",
-                 "Disciplined delivery with measurable value at each gate")
+                 "Full program scope delivered in 2–3 months — parallel workstreams where possible")
     phases = [
-        ("PHASE 1", "Contract Summarization POC", "2–3 weeks",
+        ("PHASE 1", "Contract Summarization POC", "Weeks 1–3",
          ["PMWeb API integration", "RAG MVP", "Claude extraction", "Approval UI"]),
-        ("PHASE 2", "Tender Recommendation Engine", "4–6 weeks",
+        ("PHASE 2", "Tender Recommendation Engine", "Weeks 4–6",
          ["BAFO automation", "Deviation detection", "Benchmarking", "PMWeb workflows"]),
-        ("PHASE 3", "Executive AI Chatbot", "2–3 months",
+        ("PHASE 3", "Executive AI Chatbot", "Weeks 7–9",
          ["Management queries", "RBAC + citations", "500-user pilot", "PMWeb sync"]),
-        ("PHASE 4", "AI Governance Platform", "4–6 months",
-         ["Full audit & compliance", "Predictive analytics", "DAMAC AI standards"]),
+        ("PHASE 4", "AI Governance Platform", "Weeks 10–12",
+         ["Full audit & compliance", "Governance control plane", "DAMAC AI standards"]),
     ]
     pw = Inches(2.9)
     for i, (ph, title, time, items) in enumerate(phases):
@@ -641,15 +641,75 @@ def slide_roadmap(prs):
         bullets(s, left + Inches(0.12), CONTENT_TOP + Inches(1.4), pw - Inches(0.24), Inches(2.5), items, 9, MUTED)
 
 
+def slide_delivery_slope(prs):
+    """Define delivery slope: value & capability ramp over the 2–3 month program."""
+    s = add_blank_slide(prs)
+    slide_chrome(s, "Section 07", "Delivery Slope Definition",
+                 "How capability, effort, and business value accelerate across the program")
+    # Definition panel
+    card(s, CONTENT_LEFT, CONTENT_TOP, Inches(5.6), Inches(2.15), "What Is the Delivery Slope?", [
+        "The slope is the rate at which DAMAC gains governed AI capability and business value.",
+        "Early weeks: foundation (APIs, RAG, governance shell) — lower visible value, critical risk reduction.",
+        "Mid program: steepening slope — tender intelligence and chatbot drive executive visibility.",
+        "Final weeks: plateau toward enterprise standard — full governance platform operational.",
+    ])
+    card(s, Inches(6.45), CONTENT_TOP, Inches(5.75), Inches(2.15), "Slope Dimensions", [
+        "Technical maturity: POC → production orchestration → enterprise control plane",
+        "User adoption: analyst pilots → procurement teams → executive management",
+        "Governance rigor: basic audit → RBAC + citations → full compliance & HITL",
+        "Business value: time saved on contracts → tender cycle compression → portfolio intelligence",
+    ])
+    # Ramp chart area
+    chart_l = CONTENT_LEFT
+    chart_t = CONTENT_TOP + Inches(2.45)
+    chart_w = CONTENT_WIDTH
+    chart_h = Inches(2.85)
+    rect(s, chart_l, chart_t, chart_w, chart_h, WHITE, BORDER, radius=True)
+    textbox(s, chart_l + Inches(0.15), chart_t + Inches(0.08), Inches(4), Inches(0.28),
+            "Value & Capability Ramp (2–3 Month Program)", 11, True, BLACK)
+    # Axes
+    ax_l = chart_l + Inches(0.55)
+    ax_b = chart_t + chart_h - Inches(0.45)
+    ax_w = chart_w - Inches(1.1)
+    ax_h = chart_h - Inches(0.95)
+    rect(s, ax_l, ax_b, ax_w, Inches(0.03), MUTED)
+    rect(s, ax_l, ax_b - ax_h, Inches(0.03), ax_h, MUTED)
+    textbox(s, ax_l - Inches(0.45), ax_b - ax_h / 2, Inches(0.4), Inches(0.5),
+            "Value", 9, True, MUTED, PP_ALIGN.CENTER)
+    # Slope line via segments (ascending bars = ramp)
+    phases_slope = [
+        ("Wk 1–3", "Foundation", 0.22),
+        ("Wk 4–6", "Accelerate", 0.45),
+        ("Wk 7–9", "Steep climb", 0.72),
+        ("Wk 10–12", "Enterprise", 1.0),
+    ]
+    bar_w = (ax_w - Inches(0.3)) / 4
+    for i, (wk, lbl, ht_frac) in enumerate(phases_slope):
+        bx = ax_l + Inches(0.15) + i * bar_w
+        bh = int(ax_h * ht_frac)
+        by = ax_b - bh
+        fill = RED if i >= 2 else RED_TINT
+        rect(s, bx, by, bar_w - Inches(0.12), bh, fill, RED if i >= 2 else BORDER, radius=True)
+        textbox(s, bx, ax_b + Inches(0.05), bar_w - Inches(0.12), Inches(0.22), wk, 8, True, RED, PP_ALIGN.CENTER)
+        textbox(s, bx, by - Inches(0.28), bar_w - Inches(0.12), Inches(0.25), lbl, 7, False, MUTED, PP_ALIGN.CENTER)
+    # Diagonal slope indicator
+    textbox(s, ax_l + ax_w - Inches(2.2), chart_t + Inches(0.35), Inches(2), Inches(0.3),
+            "↗ Delivery Slope", 10, True, RED, PP_ALIGN.RIGHT)
+    textbox(s, ax_l + Inches(0.1), ax_b + Inches(0.28), ax_w, Inches(0.22),
+            "Month 1          Month 2          Month 3  (10–12 weeks total)", 8, False, MUTED, PP_ALIGN.CENTER)
+    callout(s, CONTENT_LEFT, Inches(6.05), CONTENT_WIDTH,
+            "Target: complete Phases 1–4 in 2–3 months | Accelerated track: ~8–10 weeks with parallel squads")
+
+
 def slide_roadmap_timeline(prs):
     s = add_blank_slide(prs)
     slide_chrome(s, "Section 07", "Implementation Timeline",
-                 "Program duration: ~9–11 months | Quick win: 2–3 weeks")
+                 "Total program duration: 2–3 months (10–12 weeks)")
     milestones = [
-        ("Week 1–3", "Phase 1", "Contract POC"),
-        ("Week 4–9", "Phase 2", "Tender Engine"),
-        ("Month 3–5", "Phase 3", "Chatbot"),
-        ("Month 6–11", "Phase 4", "Governance Platform"),
+        ("Weeks 1–3", "Phase 1", "Contract POC"),
+        ("Weeks 4–6", "Phase 2", "Tender Engine"),
+        ("Weeks 7–9", "Phase 3", "Chatbot"),
+        ("Weeks 10–12", "Phase 4", "Governance Platform"),
     ]
     rect(s, CONTENT_LEFT, CONTENT_TOP + Inches(1.5), CONTENT_WIDTH, Inches(0.06), RED)
     n = len(milestones)
@@ -662,7 +722,7 @@ def slide_roadmap_timeline(prs):
         textbox(s, left + Inches(0.1), CONTENT_TOP + Inches(2.15), step - Inches(0.4), Inches(0.3), phase, 11, True, BLACK)
         textbox(s, left + Inches(0.1), CONTENT_TOP + Inches(2.5), step - Inches(0.4), Inches(0.6), desc, 10, False, MUTED)
     callout(s, CONTENT_LEFT, Inches(5.5), CONTENT_WIDTH,
-            "Total program: 9–11 months to DAMAC AI Governance Platform")
+            "Full scope (contract POC + tender engine + chatbot + governance platform) within 2–3 months")
 
 
 def slide_security(prs):
@@ -734,8 +794,8 @@ def slide_final_recommendation(prs):
         "Avoid direct AI-to-database architecture — API-first governed PMWeb connectivity only.",
         f"Standardize on {RECOMMENDED_AI} as the enterprise AI platform for PMWeb intelligence.",
         "Deploy AI as a governed layer that explains enterprise truth with citations.",
-        "Start with Contract Intelligence POC (Phase 1) — demonstrable value in 2–3 weeks.",
-        "Scale to DAMAC AI Governance Platform over 9–11 months.",
+        "Start with Contract Intelligence POC (Phase 1) — demonstrable value by Week 3.",
+        "Complete full program scope in 2–3 months (Phases 1–4).",
     ], 13)
     rect(s, Inches(8.2), CONTENT_TOP, Inches(4.5), Inches(3.5), RED_TINT, RED, radius=True)
     textbox(s, Inches(8.4), CONTENT_TOP + Inches(0.2), Inches(4.1), Inches(0.4), "Decision Ask", 14, True, RED)
@@ -801,8 +861,9 @@ def build_presentation(output_path: Path) -> Path:
     slide_pricing_scenarios(prs)
     slide_pricing_detail(prs)
 
-    slide_section_divider(prs, "07", "Implementation Strategy", "Phased roadmap and timelines")
+    slide_section_divider(prs, "07", "Implementation Strategy", "2–3 month delivery | slope, phases & timeline")
     slide_roadmap(prs)
+    slide_delivery_slope(prs)
     slide_roadmap_timeline(prs)
 
     slide_section_divider(prs, "08", "Security & Governance", "RBAC, audit, human-in-the-loop")

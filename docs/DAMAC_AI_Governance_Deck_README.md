@@ -6,7 +6,7 @@ Executive consulting presentation for DAMAC leadership and technology stakeholde
 
 | File | Description |
 |------|-------------|
-| `output/DAMAC_PMWeb_AI_Governance_Intelligence_Layer.pptx` | Boardroom-ready PowerPoint (35 slides) |
+| `output/DAMAC_PMWeb_AI_Governance_Intelligence_Layer.pptx` | Boardroom-ready PowerPoint (36 slides) |
 
 ## Theme
 
@@ -24,7 +24,7 @@ Executive consulting presentation for DAMAC leadership and technology stakeholde
 4. **Recommended Enterprise Architecture** — Layered architecture + RAG
 5. **AI Model Comparison** — Claude, OpenAI, Azure, Gemini + **Claude Enterprise recommendation**
 6. **Enterprise Pricing** — Token tables, scenarios, cost optimization
-7. **Implementation Strategy** — 4-phase roadmap with timelines
+7. **Implementation Strategy** — 4-phase roadmap in **2–3 months**, delivery slope definition, timeline
 8. **Security & Governance** — RBAC, audit, human-in-the-loop
 9. **Future Vision** — DAMAC AI Governance Platform
 10. **Final Recommendation** — Decision ask and next steps
