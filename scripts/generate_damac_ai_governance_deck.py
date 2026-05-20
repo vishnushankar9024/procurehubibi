@@ -232,11 +232,44 @@ def arch_box(slide, left, top, w, h, label: str, sub: str = "", highlight=False)
     fill = RED_TINT if highlight else WHITE
     line = RED if highlight else BORDER
     rect(slide, left, top, w, h, fill, line, radius=True)
-    textbox(slide, left + Inches(0.08), top + Inches(0.1), w - Inches(0.16), Inches(0.32),
+    if highlight:
+        rect(slide, left, top, Inches(0.07), h, RED)
+    pad = Inches(0.12)
+    textbox(slide, left + pad, top + Inches(0.1), w - pad * 2, Inches(0.28),
             label, FS_BODY, True, BLACK if not highlight else RED_DARK, PP_ALIGN.CENTER)
     if sub:
-        textbox(slide, left + Inches(0.05), top + Inches(0.42), w - Inches(0.1), h - Inches(0.45),
+        textbox(slide, left + pad, top + Inches(0.38), w - pad * 2, h - Inches(0.44),
                 sub, FS_BODY, False, MUTED, PP_ALIGN.CENTER)
+
+
+def draw_architecture_stack(slide):
+    """Native PowerPoint shapes — centered stack (not a flat image)."""
+    stack_w = Inches(10.0)
+    stack_l = (SLIDE_W - stack_w) // 2
+    box_h = Inches(0.58)
+    arrow_h = Inches(0.14)
+    cx = stack_l + stack_w // 2
+    layers = [
+        ("Management Experience Layer", "Dashboards · Chatbot · Approvals · Citations", False),
+        (RECOMMENDED_AI, "Document intelligence · Reasoning · Summarization", True),
+        ("AI Orchestration Layer", "Guardrails · Human-in-loop · Audit · Cost control", False),
+        ("Enterprise Knowledge Layer", "Vector DB · RAG · Ingestion · Versioning", False),
+        ("API / Integration Layer", "PMWeb APIs · ETL · Schema validation", False),
+        ("PMWeb", "System of record — contracts, tenders, projects", False),
+    ]
+    y = CONTENT_TOP + Inches(0.06)
+    for i, (title, sub, highlight) in enumerate(layers):
+        arch_box(slide, stack_l, y, stack_w, box_h, title, sub, highlight)
+        y += box_h
+        if i < len(layers) - 1:
+            textbox(slide, cx - Inches(0.14), y + Inches(0.01), Inches(0.28), arrow_h,
+                    "▼", FS_BODY, True, RED, PP_ALIGN.CENTER)
+            y += arrow_h
+    cap_h = Inches(0.42)
+    rect(slide, stack_l, y + Inches(0.06), stack_w, cap_h, RED_TINT, RED, radius=True)
+    textbox(slide, stack_l + Inches(0.15), y + Inches(0.14), stack_w - Inches(0.3), Inches(0.28),
+            "RBAC · Audit Logs · Prompt Logging · Citations · Vector DB · RAG",
+            FS_BODY, True, RED_DARK, PP_ALIGN.CENTER)
 
 
 def callout(slide, left, top, width, text: str, size=FS_BODY):
@@ -490,8 +523,7 @@ def slide_architecture(prs):
     s = add_blank_slide(prs)
     slide_chrome(s, "Section 04", "Recommended Enterprise Architecture",
                  "Governed intelligence layer — API-first, auditable, cloud-native")
-    add_diagram(s, "architecture_stack.png", CONTENT_LEFT, CONTENT_TOP,
-                width=CONTENT_WIDTH, height=Inches(4.55))
+    draw_architecture_stack(s)
 
 
 def slide_rag_architecture(prs):
