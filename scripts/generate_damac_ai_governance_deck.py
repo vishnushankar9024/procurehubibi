@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 DAMAC PMWeb — Enterprise AI Governance & Intelligence Layer
-Premium consulting deck: white base, black & red accents, CMCS + DAMAC logos.
+Premium consulting deck: white base, black & red accents, CMCS wordmark.
 """
 
 from __future__ import annotations
@@ -31,19 +31,24 @@ SLIDE_H = Inches(7.5)
 MARGIN = Inches(0.6)
 CONTENT_LEFT = MARGIN
 CONTENT_WIDTH = Inches(12.1)
-LOGO_BOTTOM = Inches(0.52)
-HEADER_PANEL_TOP = Inches(0.52)
-HEADER_PANEL_BOTTOM = Inches(1.72)
-CONTENT_TOP = Inches(1.88)
-CONTENT_BOTTOM = Inches(6.48)
-FOOTER_TOP = Inches(6.62)
+HEADER_RULE_Y = Inches(1.58)
+CONTENT_TOP = Inches(1.72)
+CONTENT_BOTTOM = Inches(6.52)
+FOOTER_TEXT_Y = Inches(6.92)
+FOOTER_LINE_Y = Inches(7.14)
 FONT = "Calibri"
+
+# Uniform typography (pt) — consistent across deck
+FS_CAPTION = 10      # section label, footer
+FS_BODY = 11         # body, bullets, tables, cards, callouts
+FS_TITLE = 22        # slide titles
+FS_DISPLAY = 28      # title slide headline only
 
 ASSETS = Path(__file__).resolve().parents[1] / "assets"
 ICONS = ASSETS / "icons"
 CMCS_LOGO = ASSETS / "cmcs_logo.png"
-DAMAC_LOGO = ASSETS / "damac_logo.png"
-HEADER_ACCENT = ASSETS / "header_accent.png"
+CMCS_LOGO_H = Inches(0.34)
+CMCS_LOGO_X = Inches(11.55)
 
 RECOMMENDED_AI = "Claude Enterprise"
 
@@ -77,7 +82,7 @@ def rect(slide, left, top, width, height, fill: RGBColor, line: RGBColor | None 
     return s
 
 
-def textbox(slide, left, top, width, height, text: str, size=14, bold=False,
+def textbox(slide, left, top, width, height, text: str, size=FS_BODY, bold=False,
             color=TEXT, align=PP_ALIGN.LEFT, font=FONT, line_spacing=1.15):
     tb = slide.shapes.add_textbox(left, top, width, height)
     tf = tb.text_frame
@@ -93,7 +98,7 @@ def textbox(slide, left, top, width, height, text: str, size=14, bold=False,
     return tb
 
 
-def bullets(slide, left, top, width, height, items: list[str], size=12, color=TEXT, spacing=8):
+def bullets(slide, left, top, width, height, items: list[str], size=FS_BODY, color=TEXT, spacing=7):
     tb = slide.shapes.add_textbox(left, top, width, height)
     tf = tb.text_frame
     tf.word_wrap = True
@@ -119,39 +124,37 @@ def add_image(slide, path: Path, left, top, height=None, width=None):
     return None
 
 
+def draw_cmcs_logo(slide):
+    add_image(slide, CMCS_LOGO, CMCS_LOGO_X, Inches(0.14), height=CMCS_LOGO_H)
+
+
+def draw_footer(slide):
+    """Minimal footer on white — thin rule only, no grey bar."""
+    rect(slide, MARGIN, FOOTER_LINE_Y, SLIDE_W - MARGIN * 2, Inches(0.018), RED)
+    textbox(slide, MARGIN, FOOTER_TEXT_Y, Inches(8.2), Inches(0.22),
+            "Enterprise AI Governance & Intelligence Layer for PMWeb  |  CMCS", FS_CAPTION, False, MUTED)
+    textbox(slide, Inches(10.9), FOOTER_TEXT_Y, Inches(2.0), Inches(0.22),
+            "CONFIDENTIAL", FS_CAPTION, True, RED, PP_ALIGN.RIGHT)
+
+
 def slide_chrome(slide, section: str = "", title: str = "", subtitle: str = ""):
-    """Consistent header band, logos, footer — no overlapping title/subtitle."""
+    """White header/footer, CMCS wordmark only, fixed typography."""
     fill_bg(slide, WHITE)
-    rect(slide, Inches(0), Inches(0), SLIDE_W, Inches(0.05), RED)
-
-    add_image(slide, DAMAC_LOGO, MARGIN, Inches(0.1), height=Inches(0.4))
-    add_image(slide, CMCS_LOGO, Inches(10.75), Inches(0.08), height=Inches(0.42))
-
-    rect(slide, Inches(0), HEADER_PANEL_TOP, SLIDE_W, HEADER_PANEL_BOTTOM - HEADER_PANEL_TOP,
-         OFF_WHITE)
-    rect(slide, CONTENT_LEFT, HEADER_PANEL_TOP + Inches(0.06), Inches(1.1), Inches(0.03), RED)
-
-    y_section = Inches(0.6)
-    y_title = Inches(0.88)
-    y_subtitle = Inches(1.42)
+    rect(slide, Inches(0), Inches(0), SLIDE_W, Inches(0.04), RED)
+    draw_cmcs_logo(slide)
 
     if section:
-        textbox(slide, CONTENT_LEFT, y_section, Inches(3), Inches(0.22),
-                section.upper(), 9, True, RED)
+        textbox(slide, CONTENT_LEFT, Inches(0.52), Inches(3), Inches(0.22),
+                section.upper(), FS_CAPTION, True, RED)
     if title:
-        textbox(slide, CONTENT_LEFT, y_title, CONTENT_WIDTH, Inches(0.52),
-                title, 24, True, BLACK)
+        textbox(slide, CONTENT_LEFT, Inches(0.78), CONTENT_WIDTH, Inches(0.48),
+                title, FS_TITLE, True, BLACK)
     if subtitle:
-        textbox(slide, CONTENT_LEFT, y_subtitle, CONTENT_WIDTH, Inches(0.28),
-                subtitle, 11, False, MUTED)
+        textbox(slide, CONTENT_LEFT, Inches(1.28), CONTENT_WIDTH, Inches(0.26),
+                subtitle, FS_BODY, False, MUTED)
 
-    rect(slide, Inches(0), HEADER_PANEL_BOTTOM, SLIDE_W, Inches(0.015), BORDER)
-    rect(slide, Inches(0), FOOTER_TOP, SLIDE_W, Inches(0.88), LIGHT_GRAY)
-    rect(slide, Inches(0), FOOTER_TOP, SLIDE_W, Inches(0.025), RED)
-    textbox(slide, MARGIN, Inches(6.78), Inches(7.8), Inches(0.25),
-            "DAMAC | Enterprise AI Governance & Intelligence Layer for PMWeb", 8, False, MUTED)
-    textbox(slide, Inches(10.85), Inches(6.78), Inches(1.9), Inches(0.25),
-            "CONFIDENTIAL", 8, True, RED, PP_ALIGN.RIGHT)
+    rect(slide, MARGIN, HEADER_RULE_Y, SLIDE_W - MARGIN * 2, Inches(0.012), BORDER)
+    draw_footer(slide)
 
 
 def card(slide, left, top, w, h, title: str, body: list[str], accent=True, icon: str | None = None):
@@ -165,9 +168,9 @@ def card(slide, left, top, w, h, title: str, body: list[str], accent=True, icon:
         if ip.exists():
             add_image(slide, ip, left + Inches(0.14), top + Inches(0.12), height=Inches(0.42))
             tx = left + Inches(0.68)
-    textbox(slide, tx, ty, w - (tx - left) - Inches(0.15), Inches(0.36), title, 12, True, BLACK)
+    textbox(slide, tx, ty, w - (tx - left) - Inches(0.15), Inches(0.36), title, FS_BODY, True, BLACK)
     bullets(slide, left + Inches(0.2), top + Inches(0.52), w - Inches(0.35), h - Inches(0.58),
-            body, 10, MUTED, spacing=6)
+            body, FS_BODY, MUTED, spacing=6)
 
 
 def insight_panel(slide, left, top, w, h, heading: str, quote: str, icon: str = "quote.png"):
@@ -175,12 +178,12 @@ def insight_panel(slide, left, top, w, h, heading: str, quote: str, icon: str = 
     if (ICONS / icon).exists():
         add_image(slide, ICONS / icon, left + Inches(0.2), top + Inches(0.18), height=Inches(0.5))
     textbox(slide, left + Inches(0.85), top + Inches(0.2), w - Inches(1.0), Inches(0.35),
-            heading, 13, True, RED)
+            heading, FS_BODY, True, RED)
     textbox(slide, left + Inches(0.25), top + Inches(0.75), w - Inches(0.5), h - Inches(0.9),
-            quote, 12, True, BLACK, PP_ALIGN.CENTER, line_spacing=1.35)
+            quote, FS_BODY, True, BLACK, PP_ALIGN.CENTER, line_spacing=1.35)
 
 
-def add_table(slide, left, top, width, height, headers, rows, font_size=9):
+def add_table(slide, left, top, width, height, headers, rows, font_size=FS_BODY):
     tbl = slide.shapes.add_table(len(rows) + 1, len(headers), left, top, width, height).table
     cw = int(width / len(headers))
     for c in range(len(headers)):
@@ -205,7 +208,7 @@ def add_table(slide, left, top, width, height, headers, rows, font_size=9):
             cell.fill.fore_color.rgb = fill
             bold = c == 0 and "Claude" in str(val)
             for p in cell.text_frame.paragraphs:
-                p.font.size = Pt(font_size - 1)
+                p.font.size = Pt(font_size)
                 p.font.color.rgb = RED if bold and r == 0 else TEXT
                 p.font.bold = bold
                 p.font.name = "Calibri"
@@ -217,13 +220,13 @@ def arch_box(slide, left, top, w, h, label: str, sub: str = "", highlight=False)
     line = RED if highlight else BORDER
     rect(slide, left, top, w, h, fill, line, radius=True)
     textbox(slide, left + Inches(0.08), top + Inches(0.1), w - Inches(0.16), Inches(0.32),
-            label, 11, True, BLACK if not highlight else RED_DARK, PP_ALIGN.CENTER)
+            label, FS_BODY, True, BLACK if not highlight else RED_DARK, PP_ALIGN.CENTER)
     if sub:
         textbox(slide, left + Inches(0.05), top + Inches(0.42), w - Inches(0.1), h - Inches(0.45),
-                sub, 8, False, MUTED, PP_ALIGN.CENTER)
+                sub, FS_BODY, False, MUTED, PP_ALIGN.CENTER)
 
 
-def callout(slide, left, top, width, text: str, size=11):
+def callout(slide, left, top, width, text: str, size=FS_BODY):
     rect(slide, left, top, width, Inches(0.48), RED_TINT, RED, radius=True)
     textbox(slide, left + Inches(0.15), top + Inches(0.1), width - Inches(0.3), Inches(0.32),
             text, size, True, RED_DARK, PP_ALIGN.CENTER)
@@ -236,24 +239,20 @@ def callout(slide, left, top, width, text: str, size=11):
 def slide_title(prs):
     s = add_blank_slide(prs)
     fill_bg(s, WHITE)
-    rect(s, Inches(0), Inches(0), SLIDE_W, Inches(0.06), RED)
-    add_image(s, DAMAC_LOGO, MARGIN, Inches(0.35), height=Inches(0.52))
-    add_image(s, CMCS_LOGO, Inches(10.5), Inches(0.32), height=Inches(0.55))
-    rect(s, MARGIN, Inches(1.75), Inches(0.09), Inches(2.6), RED)
-    textbox(s, Inches(0.82), Inches(1.55), Inches(11.2), Inches(1.35),
-            "Enterprise AI Governance &\nIntelligence Layer for PMWeb", 32, True, BLACK)
-    textbox(s, Inches(0.82), Inches(3.15), Inches(10.8), Inches(0.42),
-            "Governed AI Orchestration — Not Direct AI-to-Database Connectivity", 14, False, RED)
-    textbox(s, Inches(0.82), Inches(3.72), Inches(10), Inches(0.38),
-            "Executive Proposal for DAMAC Leadership & Technology Stakeholders", 12, False, MUTED)
+    rect(s, Inches(0), Inches(0), SLIDE_W, Inches(0.04), RED)
+    draw_cmcs_logo(s)
+    rect(s, MARGIN, Inches(1.65), Inches(0.09), Inches(2.5), RED)
+    textbox(s, Inches(0.82), Inches(1.45), Inches(10.5), Inches(1.2),
+            "Enterprise AI Governance &\nIntelligence Layer for PMWeb", FS_DISPLAY, True, BLACK)
+    textbox(s, Inches(0.82), Inches(2.95), Inches(10.2), Inches(0.38),
+            "Governed AI Orchestration — Not Direct AI-to-Database Connectivity", FS_BODY, False, RED)
+    textbox(s, Inches(0.82), Inches(3.45), Inches(10), Inches(0.32),
+            "Executive Proposal for DAMAC Leadership & Technology Stakeholders", FS_BODY, False, MUTED)
     if (ICONS / "ai.png").exists():
-        add_image(s, ICONS / "ai.png", Inches(10.2), Inches(4.5), height=Inches(1.1))
-    textbox(s, Inches(0.82), Inches(5.85), Inches(6), Inches(0.32),
-            "Prepared for DAMAC  |  May 2026", 11, False, MUTED)
-    rect(s, Inches(0), FOOTER_TOP, SLIDE_W, Inches(0.88), LIGHT_GRAY)
-    rect(s, Inches(0), FOOTER_TOP, SLIDE_W, Inches(0.025), RED)
-    textbox(s, MARGIN, Inches(6.78), Inches(10), Inches(0.28),
-            "CMCS × DAMAC AI Transformation Proposal", 8, False, MUTED)
+        add_image(s, ICONS / "ai.png", Inches(9.8), Inches(4.2), height=Inches(1.0))
+    textbox(s, Inches(0.82), Inches(5.7), Inches(6), Inches(0.28),
+            "Prepared for DAMAC  |  May 2026", FS_BODY, False, MUTED)
+    draw_footer(s)
 
 
 def slide_agenda(prs):
@@ -276,26 +275,22 @@ def slide_agenda(prs):
         num, rest = item[:2], item[3:]
         rect(s, CONTENT_LEFT, y, Inches(0.48), Inches(0.38), RED, radius=True)
         textbox(s, CONTENT_LEFT + Inches(0.1), y + Inches(0.04), Inches(0.35), Inches(0.3),
-                num, 11, True, WHITE, PP_ALIGN.CENTER)
-        textbox(s, CONTENT_LEFT + Inches(0.62), y + Inches(0.06), Inches(10), Inches(0.32), rest, 12, False, TEXT)
+                num, FS_BODY, True, WHITE, PP_ALIGN.CENTER)
+        textbox(s, CONTENT_LEFT + Inches(0.62), y + Inches(0.06), Inches(10), Inches(0.32), rest, FS_BODY, False, TEXT)
         y += Inches(0.46)
 
 
 def slide_section_divider(prs, num: str, title: str, subtitle: str = ""):
     s = add_blank_slide(prs)
     fill_bg(s, WHITE)
-    rect(s, Inches(0), Inches(0), Inches(0.28), SLIDE_H, RED)
-    rect(s, Inches(0), Inches(0), SLIDE_W, Inches(0.045), RED)
-    add_image(s, DAMAC_LOGO, MARGIN, Inches(0.1), height=Inches(0.4))
-    add_image(s, CMCS_LOGO, Inches(10.75), Inches(0.08), height=Inches(0.42))
-    rect(s, Inches(0), FOOTER_TOP, SLIDE_W, Inches(0.78), LIGHT_GRAY)
-    rect(s, Inches(0), FOOTER_TOP, SLIDE_W, Inches(0.02), RED)
-    textbox(s, MARGIN, Inches(6.82), Inches(7.5), Inches(0.28),
-            "DAMAC | Enterprise AI Governance & Intelligence Layer for PMWeb", 8, False, MUTED)
-    textbox(s, Inches(0.55), Inches(2.5), Inches(1.5), Inches(0.7), num, 40, True, RED)
-    textbox(s, Inches(0.55), Inches(3.25), Inches(11), Inches(0.9), title, 30, True, BLACK)
+    rect(s, Inches(0), Inches(0), Inches(0.22), SLIDE_H, RED)
+    rect(s, Inches(0), Inches(0), SLIDE_W, Inches(0.04), RED)
+    draw_cmcs_logo(s)
+    draw_footer(s)
+    textbox(s, Inches(0.55), Inches(2.55), Inches(1.2), Inches(0.55), num, FS_DISPLAY, True, RED)
+    textbox(s, Inches(0.55), Inches(3.2), Inches(11), Inches(0.75), title, FS_TITLE, True, BLACK)
     if subtitle:
-        textbox(s, Inches(0.55), Inches(4.25), Inches(10), Inches(0.55), subtitle, 14, False, MUTED)
+        textbox(s, Inches(0.55), Inches(4.05), Inches(10), Inches(0.45), subtitle, FS_BODY, False, MUTED)
 
 
 def slide_exec_summary(prs):
@@ -312,7 +307,7 @@ def slide_exec_summary(prs):
         "AI accelerates decisions only when deployed as a governed intelligence layer over enterprise truth.",
         f"Recommended AI platform: {RECOMMENDED_AI} behind an Enterprise Orchestration Layer.",
         "Deliver full scoped program in 2–3 months: POC → tender engine → chatbot → governance platform.",
-    ], 12, TEXT, spacing=10)
+    ], FS_BODY, TEXT, spacing=8)
     insight_panel(s, panel_l, CONTENT_TOP, panel_w, panel_h,
                   "Strategic Thesis",
                   '"AI should explain enterprise truth,\nnot derive uncontrolled truth."')
@@ -342,25 +337,25 @@ def slide_current_vs_future(prs):
     cw = Inches(5.75)
     rect(s, CONTENT_LEFT, CONTENT_TOP, cw, Inches(4.5), LIGHT_GRAY, BORDER, radius=True)
     textbox(s, CONTENT_LEFT + Inches(0.25), CONTENT_TOP + Inches(0.15), Inches(4), Inches(0.35),
-            "CURRENT STATE", 14, True, MUTED)
+            "CURRENT STATE", FS_BODY, True, MUTED)
     bullets(s, CONTENT_LEFT + Inches(0.25), CONTENT_TOP + Inches(0.55), cw - Inches(0.5), Inches(3.8), [
         "Manual contract & tender summarization",
         "Fragmented document repositories",
         "Reactive management reporting",
         "Siloed PMWeb data access",
         "No AI audit trail or governance",
-    ], 11)
-    textbox(s, Inches(6.55), CONTENT_TOP + Inches(1.8), Inches(0.6), Inches(0.5), "→", 40, True, RED, PP_ALIGN.CENTER)
+    ], FS_BODY)
+    textbox(s, Inches(6.55), CONTENT_TOP + Inches(1.8), Inches(0.6), Inches(0.5), "→", FS_TITLE, True, RED, PP_ALIGN.CENTER)
     rect(s, Inches(7.0), CONTENT_TOP, cw, Inches(4.5), RED_TINT, RED, radius=True)
     textbox(s, Inches(7.25), CONTENT_TOP + Inches(0.15), Inches(4), Inches(0.35),
-            "FUTURE STATE", 14, True, RED)
+            "FUTURE STATE", FS_BODY, True, RED)
     bullets(s, Inches(7.25), CONTENT_TOP + Inches(0.55), cw - Inches(0.5), Inches(3.8), [
         "AI-assisted governance & summarization",
         "Enterprise Knowledge Layer + RAG",
         "Executive AI chatbot with citations",
         "Governed API orchestration to PMWeb",
         "DAMAC AI Governance Platform",
-    ], 11, TEXT)
+    ], FS_BODY, TEXT)
     callout(s, CONTENT_LEFT, CONTENT_BOTTOM - Inches(0.52), CONTENT_WIDTH,
             "Opportunity: AI-assisted governance — not ungoverned AI connectivity")
 
@@ -476,19 +471,19 @@ def slide_risk_diagram(prs):
                  "Architecture decision with enterprise consequences")
     rect(s, CONTENT_LEFT, CONTENT_TOP, Inches(5.6), Inches(4.35), LIGHT_GRAY, BORDER, radius=True)
     textbox(s, CONTENT_LEFT + Inches(0.2), CONTENT_TOP + Inches(0.12), Inches(4), Inches(0.3),
-            "✕  ANTI-PATTERN", 13, True, RED)
+            "✕  ANTI-PATTERN", FS_BODY, True, RED)
     cx = CONTENT_LEFT + Inches(1.0)
     y = CONTENT_TOP + Inches(0.65)
     for lbl in ["Claude / OpenAI", "Direct DB / SQL", "PMWeb Database"]:
         arch_box(s, cx, y, Inches(3.6), Inches(0.58), lbl)
-        textbox(s, cx + Inches(1.65), y + Inches(0.58), Inches(0.3), Inches(0.25), "▼", 12, True, RED, PP_ALIGN.CENTER)
+        textbox(s, cx + Inches(1.65), y + Inches(0.58), Inches(0.3), Inches(0.25), "▼", FS_BODY, True, RED, PP_ALIGN.CENTER)
         y += Inches(0.88)
     textbox(s, CONTENT_LEFT + Inches(0.2), y + Inches(0.1), Inches(5), Inches(0.3),
-            "No RBAC • No citations • No audit", 10, False, MUTED)
+            "No RBAC • No citations • No audit", FS_CAPTION, False, MUTED)
 
     rect(s, Inches(6.95), CONTENT_TOP, Inches(5.75), Inches(4.35), RED_TINT, RED, radius=True)
     textbox(s, Inches(7.15), CONTENT_TOP + Inches(0.12), Inches(4), Inches(0.3),
-            "✓  RECOMMENDED", 13, True, RED_DARK)
+            "✓  RECOMMENDED", FS_BODY, True, RED_DARK)
     y = CONTENT_TOP + Inches(0.55)
     for lbl in ["Management Experience", "AI Orchestration + Governance",
                 "Enterprise Knowledge Layer", "API / Integration Layer", "PMWeb"]:
@@ -515,10 +510,10 @@ def slide_architecture(prs):
         arch_box(s, bx, y, bw, Inches(0.62), title, sub, highlight=(RECOMMENDED_AI in title))
         if i < len(layers) - 1:
             textbox(s, bx + bw / 2 - Inches(0.12), y + Inches(0.62), Inches(0.3), Inches(0.2),
-                    "▼", 11, True, RED, PP_ALIGN.CENTER)
+                    "▼", FS_BODY, True, RED, PP_ALIGN.CENTER)
         y += Inches(0.72)
     caps = "RBAC  |  Audit Logs  |  Prompt Logging  |  Citations  |  Vector DB  |  RAG"
-    callout(s, CONTENT_LEFT, CONTENT_BOTTOM - Inches(0.48), CONTENT_WIDTH, caps, 10)
+    callout(s, CONTENT_LEFT, CONTENT_BOTTOM - Inches(0.48), CONTENT_WIDTH, caps)
 
 
 def slide_rag_architecture(prs):
@@ -536,7 +531,7 @@ def slide_rag_architecture(prs):
         left = x0 + i * gap
         arch_box(s, left, y, bw, bh, lbl, highlight=(lbl == "Claude"))
         if i < n - 1:
-            textbox(s, left + bw, y + Inches(0.32), Inches(0.22), Inches(0.25), "→", 14, True, RED, PP_ALIGN.CENTER)
+            textbox(s, left + bw, y + Inches(0.32), Inches(0.22), Inches(0.25), "→", FS_BODY, True, RED, PP_ALIGN.CENTER)
     comps = [
         ("Document Ingestion", "PDF, Word, PMWeb exports — OCR and classification"),
         ("Orchestration Engine", "Policy routing, fallbacks, evaluation hooks"),
@@ -563,7 +558,7 @@ def slide_model_comparison(prs):
         ["Enterprise Readiness", "★★★★★", "★★★★★", "★★★★★", "★★★★☆"],
         ["PMWeb Fit (DAMAC)", "★★★★★", "★★★★☆", "★★★★☆", "★★★☆☆"],
     ]
-    add_table(s, CONTENT_LEFT, CONTENT_TOP, CONTENT_WIDTH, Inches(3.6), headers, rows, 9)
+    add_table(s, CONTENT_LEFT, CONTENT_TOP, CONTENT_WIDTH, Inches(3.6), headers, rows)
     callout(s, CONTENT_LEFT, Inches(5.15), CONTENT_WIDTH,
             f"Recommendation: {RECOMMENDED_AI} — best fit for contract, tender & document intelligence")
 
@@ -577,9 +572,9 @@ def slide_model_recommendation(prs):
         add_image(s, ICONS / "ai.png", CONTENT_LEFT + Inches(0.3), CONTENT_TOP + Inches(0.35), height=Inches(0.85))
     rect(s, CONTENT_LEFT + Inches(1.2), CONTENT_TOP + Inches(0.28), Inches(1.55), Inches(0.36), RED, radius=True)
     textbox(s, CONTENT_LEFT + Inches(1.3), CONTENT_TOP + Inches(0.33), Inches(1.4), Inches(0.3),
-            "RECOMMENDED", 11, True, WHITE, PP_ALIGN.CENTER)
+            "RECOMMENDED", FS_CAPTION, True, WHITE, PP_ALIGN.CENTER)
     textbox(s, CONTENT_LEFT + Inches(1.15), CONTENT_TOP + Inches(0.88), Inches(10.5), Inches(0.65),
-            RECOMMENDED_AI, 30, True, BLACK)
+            RECOMMENDED_AI, FS_TITLE, True, BLACK)
     bullets(s, CONTENT_LEFT + Inches(1.15), CONTENT_TOP + Inches(1.65), Inches(10.5), Inches(2.4), [
         "Primary enterprise AI for DAMAC PMWeb governance layer",
         "Industry-leading document & contract summarization with long context",
@@ -587,11 +582,11 @@ def slide_model_recommendation(prs):
         "Strong enterprise governance: RBAC integration, audit, data controls",
         "Consistent model family (Haiku / Sonnet / Opus) for cost-tiered workloads",
         "Unified vendor relationship simplifies security review and DPAs",
-    ], 13, TEXT)
+    ], FS_BODY, TEXT)
     rect(s, CONTENT_LEFT, Inches(5.75), CONTENT_WIDTH, Inches(0.52), BLACK, radius=True)
     textbox(s, CONTENT_LEFT + Inches(0.2), Inches(5.86), CONTENT_WIDTH - Inches(0.4), Inches(0.35),
             "One platform. One governance model. Orchestration layer routes Haiku → Sonnet → Opus by task complexity.",
-            11, True, WHITE, PP_ALIGN.CENTER)
+            FS_BODY, True, WHITE, PP_ALIGN.CENTER)
 
 
 def slide_pricing_tokens(prs):
@@ -604,21 +599,21 @@ def slide_pricing_tokens(prs):
         ["Sonnet 4.5", "$3.00", "$15.00", "Contract & tender summarization"],
         ["Opus 4.5", "$15.00", "$75.00", "Complex contracts, executive summaries"],
     ]
-    add_table(s, CONTENT_LEFT, CONTENT_TOP, Inches(8.5), Inches(1.6), headers, rows, 10)
+    add_table(s, CONTENT_LEFT, CONTENT_TOP, Inches(8.5), Inches(1.6), headers, rows)
     textbox(s, CONTENT_LEFT, CONTENT_TOP + Inches(1.85), Inches(11), Inches(0.3),
-            "Reference pricing (May 2026 indicative). Competitors shown for context only.", 9, False, MUTED)
+            "Reference pricing (May 2026 indicative). Competitors shown for context only.", FS_CAPTION, False, MUTED)
     headers2 = ["Provider", "Comparable Tier", "Input", "Output"]
     rows2 = [
         ["OpenAI", "GPT-4.1", "$2.00", "$8.00"],
         ["Azure OpenAI", "GPT-4.1", "$2.20", "$8.80"],
         ["Gemini", "Enterprise", "$1.50", "$6.00"],
     ]
-    add_table(s, CONTENT_LEFT, CONTENT_TOP + Inches(2.25), Inches(8.5), Inches(1.5), headers2, rows2, 9)
-    bullets(s, CONTENT_LEFT, CONTENT_TOP + Inches(4.0), Inches(11), Inches(1.5), [
+    add_table(s, CONTENT_LEFT, CONTENT_TOP + Inches(2.25), Inches(8.5), Inches(1.5), headers2, rows2)
+    bullets(s, CONTENT_LEFT, CONTENT_TOP + Inches(3.95), Inches(11), Inches(1.35), [
         "DAMAC standardizes on Claude — no multi-vendor routing complexity",
         "Prompt caching: up to 90% savings on repeated contract templates",
         "RAG reduces tokens sent to Sonnet/Opus by pre-filtering relevant chunks",
-    ], 11)
+    ], FS_BODY)
 
 
 def slide_pricing_scenarios(prs):
@@ -633,15 +628,15 @@ def slide_pricing_scenarios(prs):
         ["Combined (Phase 3)", "All workloads + caching", "Tiered routing", "$16,000 – $28,000"],
         ["Full Platform (Phase 4)", "All + governance infra", "Full stack", "$30,000 – $48,000"],
     ]
-    add_table(s, CONTENT_LEFT, CONTENT_TOP, CONTENT_WIDTH, Inches(2.6), headers, rows, 9)
+    add_table(s, CONTENT_LEFT, CONTENT_TOP, CONTENT_WIDTH, Inches(2.6), headers, rows)
     textbox(s, CONTENT_LEFT, CONTENT_TOP + Inches(2.85), Inches(4), Inches(0.35),
-            "Cost Optimization Strategies", 13, True, RED)
+            "Cost Optimization Strategies", FS_BODY, True, RED)
     bullets(s, CONTENT_LEFT, CONTENT_TOP + Inches(3.25), Inches(11), Inches(2.0), [
         "Prompt caching for repeated tender and contract templates",
         "Haiku for retrieval and chatbot triage; Sonnet for synthesis; Opus for complex packs only",
         "RAG architecture limits context sent to premium models",
         "Batch off-peak processing for non-urgent summarization",
-    ], 11)
+    ], FS_BODY)
 
 
 def slide_pricing_detail(prs):
@@ -655,7 +650,7 @@ def slide_pricing_detail(prs):
         ["Chatbot query", "~2K in / 500 out", "Haiku", "$0.003", "$6,500"],
         ["Executive summary", "~120K in / 6K out", "Opus", "$2.10", "$1,800"],
     ]
-    add_table(s, CONTENT_LEFT, CONTENT_TOP, CONTENT_WIDTH, Inches(2.4), headers, rows, 9)
+    add_table(s, CONTENT_LEFT, CONTENT_TOP, CONTENT_WIDTH, Inches(2.4), headers, rows)
     callout(s, CONTENT_LEFT, Inches(4.0), CONTENT_WIDTH,
             "Scenarios: 1,000 contracts + 200 tenders + 500 chatbot users ≈ $22,000 – $26,000 / month at scale")
 
@@ -678,12 +673,12 @@ def slide_roadmap(prs):
     for i, (ph, title, time, items) in enumerate(phases):
         left = CONTENT_LEFT + i * Inches(3.02)
         rect(s, left, CONTENT_TOP, pw, Inches(4.1), WHITE, RED if i == 0 else BORDER, radius=True)
-        textbox(s, left + Inches(0.12), CONTENT_TOP + Inches(0.12), pw - Inches(0.24), Inches(0.25), ph, 9, True, RED)
-        textbox(s, left + Inches(0.12), CONTENT_TOP + Inches(0.4), pw - Inches(0.24), Inches(0.5), title, 10, True, BLACK)
-        rect(s, left + Inches(0.12), CONTENT_TOP + Inches(0.95), pw - Inches(0.24), Inches(0.32), RED if i == 0 else LIGHT_GRAY, radius=True)
+        textbox(s, left + Inches(0.12), CONTENT_TOP + Inches(0.12), pw - Inches(0.24), Inches(0.25), ph, FS_CAPTION, True, RED)
+        textbox(s, left + Inches(0.12), CONTENT_TOP + Inches(0.4), pw - Inches(0.24), Inches(0.5), title, FS_BODY, True, BLACK)
+        rect(s, left + Inches(0.12), CONTENT_TOP + Inches(0.95), pw - Inches(0.24), Inches(0.32), RED if i == 0 else BORDER, radius=True)
         textbox(s, left + Inches(0.12), CONTENT_TOP + Inches(0.98), pw - Inches(0.24), Inches(0.28),
-                time, 9, True, WHITE if i == 0 else RED, PP_ALIGN.CENTER)
-        bullets(s, left + Inches(0.12), CONTENT_TOP + Inches(1.4), pw - Inches(0.24), Inches(2.5), items, 9, MUTED)
+                time, FS_CAPTION, True, WHITE if i == 0 else RED, PP_ALIGN.CENTER)
+        bullets(s, left + Inches(0.12), CONTENT_TOP + Inches(1.4), pw - Inches(0.24), Inches(2.5), items, FS_BODY, MUTED)
 
 
 def slide_delivery_slope(prs):
@@ -711,7 +706,7 @@ def slide_delivery_slope(prs):
     chart_h = Inches(2.85)
     rect(s, chart_l, chart_t, chart_w, chart_h, WHITE, BORDER, radius=True)
     textbox(s, chart_l + Inches(0.15), chart_t + Inches(0.08), Inches(4), Inches(0.28),
-            "Value & Capability Ramp (2–3 Month Program)", 11, True, BLACK)
+            "Value & Capability Ramp (2–3 Month Program)", FS_BODY, True, BLACK)
     # Axes
     ax_l = chart_l + Inches(0.55)
     ax_b = chart_t + chart_h - Inches(0.45)
@@ -720,7 +715,7 @@ def slide_delivery_slope(prs):
     rect(s, ax_l, ax_b, ax_w, Inches(0.03), MUTED)
     rect(s, ax_l, ax_b - ax_h, Inches(0.03), ax_h, MUTED)
     textbox(s, ax_l - Inches(0.45), ax_b - ax_h / 2, Inches(0.4), Inches(0.5),
-            "Value", 9, True, MUTED, PP_ALIGN.CENTER)
+            "Value", FS_CAPTION, True, MUTED, PP_ALIGN.CENTER)
     # Slope line via segments (ascending bars = ramp)
     phases_slope = [
         ("Wk 1–3", "Foundation", 0.22),
@@ -735,13 +730,12 @@ def slide_delivery_slope(prs):
         by = ax_b - bh
         fill = RED if i >= 2 else RED_TINT
         rect(s, bx, by, bar_w - Inches(0.12), bh, fill, RED if i >= 2 else BORDER, radius=True)
-        textbox(s, bx, ax_b + Inches(0.05), bar_w - Inches(0.12), Inches(0.22), wk, 8, True, RED, PP_ALIGN.CENTER)
-        textbox(s, bx, by - Inches(0.28), bar_w - Inches(0.12), Inches(0.25), lbl, 7, False, MUTED, PP_ALIGN.CENTER)
-    # Diagonal slope indicator
+        textbox(s, bx, ax_b + Inches(0.05), bar_w - Inches(0.12), Inches(0.22), wk, FS_CAPTION, True, RED, PP_ALIGN.CENTER)
+        textbox(s, bx, by - Inches(0.28), bar_w - Inches(0.12), Inches(0.25), lbl, FS_CAPTION, False, MUTED, PP_ALIGN.CENTER)
     textbox(s, ax_l + ax_w - Inches(2.2), chart_t + Inches(0.35), Inches(2), Inches(0.3),
-            "↗ Delivery Slope", 10, True, RED, PP_ALIGN.RIGHT)
+            "↗ Delivery Slope", FS_CAPTION, True, RED, PP_ALIGN.RIGHT)
     textbox(s, ax_l + Inches(0.1), ax_b + Inches(0.28), ax_w, Inches(0.22),
-            "Month 1          Month 2          Month 3  (10–12 weeks total)", 8, False, MUTED, PP_ALIGN.CENTER)
+            "Month 1          Month 2          Month 3  (10–12 weeks total)", FS_CAPTION, False, MUTED, PP_ALIGN.CENTER)
     callout(s, CONTENT_LEFT, CONTENT_BOTTOM - Inches(0.48), CONTENT_WIDTH,
             "Target: complete Phases 1–4 in 2–3 months | Accelerated track: ~8–10 weeks with parallel squads")
 
@@ -763,9 +757,9 @@ def slide_roadmap_timeline(prs):
         left = CONTENT_LEFT + i * step + Inches(0.1)
         rect(s, left + step / 2 - Inches(0.06), CONTENT_TOP + Inches(1.35), Inches(0.12), Inches(0.22), RED)
         rect(s, left, CONTENT_TOP + Inches(1.75), step - Inches(0.25), Inches(1.65), WHITE, BORDER, radius=True)
-        textbox(s, left + Inches(0.1), CONTENT_TOP + Inches(1.88), step - Inches(0.4), Inches(0.25), time, 9, True, RED)
-        textbox(s, left + Inches(0.1), CONTENT_TOP + Inches(2.15), step - Inches(0.4), Inches(0.3), phase, 11, True, BLACK)
-        textbox(s, left + Inches(0.1), CONTENT_TOP + Inches(2.5), step - Inches(0.4), Inches(0.6), desc, 10, False, MUTED)
+        textbox(s, left + Inches(0.1), CONTENT_TOP + Inches(1.88), step - Inches(0.4), Inches(0.25), time, FS_CAPTION, True, RED)
+        textbox(s, left + Inches(0.1), CONTENT_TOP + Inches(2.15), step - Inches(0.4), Inches(0.3), phase, FS_BODY, True, BLACK)
+        textbox(s, left + Inches(0.1), CONTENT_TOP + Inches(2.5), step - Inches(0.4), Inches(0.6), desc, FS_BODY, False, MUTED)
     callout(s, CONTENT_LEFT, CONTENT_BOTTOM - Inches(0.48), CONTENT_WIDTH,
             "Full scope (contract POC + tender engine + chatbot + governance platform) within 2–3 months")
 
@@ -797,7 +791,7 @@ def slide_governance_diagram(prs):
     cx, cy = Inches(5.15), Inches(3.85)
     rect(s, cx, cy, Inches(3.0), Inches(1.15), RED, radius=True)
     textbox(s, cx + Inches(0.1), cy + Inches(0.28), Inches(2.8), Inches(0.6),
-            "AI Governance\nControl Plane", 13, True, WHITE, PP_ALIGN.CENTER)
+            "AI Governance\nControl Plane", FS_BODY, True, WHITE, PP_ALIGN.CENTER)
     orbit = [
         (Inches(0.55), Inches(2.55), "RBAC & SSO"),
         (Inches(9.85), Inches(2.55), "Audit & Compliance"),
@@ -841,16 +835,16 @@ def slide_final_recommendation(prs):
         "Deploy AI as a governed layer that explains enterprise truth with citations.",
         "Start with Contract Intelligence POC (Phase 1) — demonstrable value by Week 3.",
         "Complete full program scope in 2–3 months (Phases 1–4).",
-    ], 13)
+    ], FS_BODY)
     rect(s, Inches(8.2), CONTENT_TOP, Inches(4.5), Inches(3.5), RED_TINT, RED, radius=True)
-    textbox(s, Inches(8.4), CONTENT_TOP + Inches(0.2), Inches(4.1), Inches(0.4), "Decision Ask", 14, True, RED)
+    textbox(s, Inches(8.4), CONTENT_TOP + Inches(0.2), Inches(4.1), Inches(0.4), "Decision Ask", FS_BODY, True, RED)
     bullets(s, Inches(8.4), CONTENT_TOP + Inches(0.7), Inches(4.1), Inches(2.6), [
         "Approve Phase 1 POC budget & team",
         "Nominate DAMAC executive sponsor",
         "Confirm PMWeb API access scope",
         "Approve Claude Enterprise as AI standard",
         "Establish AI governance steering committee",
-    ], 11, TEXT)
+    ], FS_BODY, TEXT)
     callout(s, CONTENT_LEFT, CONTENT_BOTTOM - Inches(0.48), CONTENT_WIDTH,
             "Build the intelligence layer that governs how AI serves DAMAC — not ungoverned connectivity.")
 
@@ -858,14 +852,14 @@ def slide_final_recommendation(prs):
 def slide_thank_you(prs):
     s = add_blank_slide(prs)
     fill_bg(s, WHITE)
-    rect(s, Inches(0), Inches(0), SLIDE_W, Inches(0.06), RED)
-    add_image(s, DAMAC_LOGO, Inches(4.2), Inches(0.55), height=Inches(0.48))
-    add_image(s, CMCS_LOGO, Inches(7.0), Inches(0.52), height=Inches(0.5))
-    textbox(s, MARGIN, Inches(2.5), CONTENT_WIDTH, Inches(0.9), "Thank You", 40, True, BLACK, PP_ALIGN.CENTER)
-    textbox(s, MARGIN, Inches(3.5), CONTENT_WIDTH, Inches(0.5),
-            "Enterprise AI Governance & Intelligence Layer for PMWeb", 16, False, RED, PP_ALIGN.CENTER)
-    textbox(s, MARGIN, Inches(4.2), CONTENT_WIDTH, Inches(0.4),
-            "CMCS × DAMAC  |  Confidential", 12, False, MUTED, PP_ALIGN.CENTER)
+    rect(s, Inches(0), Inches(0), SLIDE_W, Inches(0.04), RED)
+    draw_cmcs_logo(s)
+    textbox(s, MARGIN, Inches(2.6), CONTENT_WIDTH, Inches(0.8), "Thank You", FS_DISPLAY, True, BLACK, PP_ALIGN.CENTER)
+    textbox(s, MARGIN, Inches(3.55), CONTENT_WIDTH, Inches(0.4),
+            "Enterprise AI Governance & Intelligence Layer for PMWeb", FS_BODY, False, RED, PP_ALIGN.CENTER)
+    textbox(s, MARGIN, Inches(4.15), CONTENT_WIDTH, Inches(0.35),
+            "CMCS  |  Confidential", FS_BODY, False, MUTED, PP_ALIGN.CENTER)
+    draw_footer(s)
 
 
 def build_presentation(output_path: Path) -> Path:

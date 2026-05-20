@@ -29,18 +29,17 @@ def _font(size: int, bold: bool = False):
 
 
 def create_cmcs_logo(path: Path):
-    w, h = 520, 140
+    """Clean wordmark only — no swoosh / parabolic accents."""
+    w, h = 400, 90
     img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    f = _font(58, True)
+    f = _font(52, True)
     text = "CMCS"
     bb = d.textbbox((0, 0), text, font=f)
     tw, th = bb[2] - bb[0], bb[3] - bb[1]
-    x, y = (w - tw) // 2 - 8, (h - th) // 2 - 6
+    x, y = (w - tw) // 2, (h - th) // 2 - 4
     d.text((x, y), text, fill=BLACK, font=f)
-    d.text((x + tw, y - 6), "™", fill=BLACK, font=_font(14, True))
-    d.arc([x - 50, y - 38, x + tw + 42, y + th + 18], 205, 335, fill=RED, width=6)
-    d.arc([x - 40, y - 8, x + tw + 50, y + th + 45], 165, 295, fill=RED, width=6)
+    d.text((x + tw + 2, y - 4), "™", fill=BLACK, font=_font(12, True))
     img.save(path, "PNG")
 
 
@@ -164,8 +163,6 @@ if __name__ == "__main__":
     ASSETS.mkdir(parents=True, exist_ok=True)
     ICONS.mkdir(parents=True, exist_ok=True)
     create_cmcs_logo(ASSETS / "cmcs_logo.png")
-    create_damac_logo(ASSETS / "damac_logo.png")
-    create_header_accent(ASSETS / "header_accent.png")
     icon_document(ICONS / "document.png")
     icon_contract(ICONS / "contract.png")
     icon_chat(ICONS / "chat.png")
